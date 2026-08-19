@@ -13,6 +13,13 @@ public sealed class AppConfig
     [JsonPropertyName("auto_switch_hotkey")]
     public string AutoSwitchHotkey { get; set; } = "Scroll";
 
+    // Hotkeys для ручных действий (замена последнего слова / замена выделенного текста)
+    [JsonPropertyName("hotkey_last_word")]
+    public string HotkeyLastWord { get; set; } = "Pause";
+
+    [JsonPropertyName("hotkey_selection")]
+    public string HotkeySelection { get; set; } = "Shift+Pause";
+
     [JsonPropertyName("sound")]
     public bool Sound { get; set; }
 

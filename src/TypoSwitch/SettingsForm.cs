@@ -14,22 +14,41 @@ internal sealed class SettingsForm : Form
     private readonly TextBox _hotkeyText = new();
     private readonly Button _hotkeyButton = new();
     private readonly Label _hotkeyInfo = new();
+    private readonly TextBox _lastWordText = new();
+    private readonly Button _lastWordButton = new();
+    private readonly Label _lastWordInfo = new();
+    private readonly TextBox _selectionText = new();
+    private readonly Button _selectionButton = new();
+    private readonly Label _selectionInfo = new();
     private readonly Label _keysInfo = new();
     private bool _capturingHotkey;
+    private HotkeyTarget _hotkeyTarget;
     private string _hotkeyDraft;
+    private string _lastWordDraft;
+    private string _selectionDraft;
     private readonly AppConfig _config;
+
+    private enum HotkeyTarget
+    {
+        AutoSwitch,
+        LastWord,
+        Selection
+    }
 
     public SettingsForm(AppConfig config)
     {
         _config = config;
         _hotkeyDraft = config.AutoSwitchHotkey;
+        _lastWordDraft = config.HotkeyLastWord;
+        _selectionDraft = config.HotkeySelection;
+        _hotkeyTarget = HotkeyTarget.AutoSwitch;
         Text = "Turbo Switcher — настройки";
         Font = new Font("Segoe UI", 10);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(460, 540);
+        ClientSize = new Size(460, 700);
         AutoScaleMode = AutoScaleMode.Font;
         KeyPreview = true;
         KeyDown += (_, e) =>
@@ -107,20 +126,68 @@ internal sealed class SettingsForm : Form
         _hotkeyButton.Size = new Size(144, 30);
         _hotkeyButton.Click += (_, _) =>
         {
+            _hotkeyTarget = HotkeyTarget.AutoSwitch;
             _capturingHotkey = true;
             _hotkeyButton.Text = "Нажмите комбинацию…";
             _hotkeyText.Text = "";
             _hotkeyText.Focus();
         };
 
-        _keysInfo.AutoSize = false;
-        _keysInfo.Location = new Point(16, 440);
-        _keysInfo.Size = new Size(428, 60);
-        _keysInfo.Text = $"{FormatHotkey(_hotkeyDraft)} — вкл/выкл автоисправление\nPause — сменить последнее слово\nShift+Pause — сменить выделенный текст";
+        _lastWordInfo.AutoSize = false;
+        _lastWordInfo.Location = new Point(16, 440);
+        _lastWordInfo.Size = new Size(220, 27);
+        _lastWordInfo.Text = "Последнее слово:";
 
-        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 488), DialogResult = DialogResult.OK };
-        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 488), DialogResult = DialogResult.Cancel };
-        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 488) };
+        _lastWordText.ReadOnly = true;
+        _lastWordText.Location = new Point(250, 436);
+        _lastWordText.Size = new Size(190, 27);
+        _lastWordText.Text = FormatHotkey(_lastWordDraft);
+
+        _lastWordButton.Text = "Изменить";
+        _lastWordButton.Location = new Point(296, 464);
+        _lastWordButton.Size = new Size(144, 30);
+        _lastWordButton.Click += (_, _) =>
+        {
+            _hotkeyTarget = HotkeyTarget.LastWord;
+            _capturingHotkey = true;
+            _lastWordButton.Text = "Нажмите комбинацию…";
+            _lastWordText.Text = "";
+            _lastWordText.Focus();
+        };
+
+        _selectionInfo.AutoSize = false;
+        _selectionInfo.Location = new Point(16, 500);
+        _selectionInfo.Size = new Size(220, 27);
+        _selectionInfo.Text = "Выделенный текст:";
+
+        _selectionText.ReadOnly = true;
+        _selectionText.Location = new Point(250, 496);
+        _selectionText.Size = new Size(190, 27);
+        _selectionText.Text = FormatHotkey(_selectionDraft);
+
+        _selectionButton.Text = "Изменить";
+        _selectionButton.Location = new Point(296, 524);
+        _selectionButton.Size = new Size(144, 30);
+        _selectionButton.Click += (_, _) =>
+        {
+            _hotkeyTarget = HotkeyTarget.Selection;
+            _capturingHotkey = true;
+            _selectionButton.Text = "Нажмите комбинацию…";
+            _selectionText.Text = "";
+            _selectionText.Focus();
+        };
+
+        _keysInfo.AutoSize = false;
+        _keysInfo.Location = new Point(16, 560);
+        _keysInfo.Size = new Size(428, 60);
+        _keysInfo.Text =
+            $"{FormatHotkey(_hotkeyDraft)} — автоисправление (вкл/выкл)\n" +
+            $"{FormatHotkey(_lastWordDraft)} — сменить последнее слово\n" +
+            $"{FormatHotkey(_selectionDraft)} — сменить выделенный текст";
+
+        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 640), DialogResult = DialogResult.OK };
+        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 640), DialogResult = DialogResult.Cancel };
+        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 640) };
         folder.Click += (_, _) =>
         {
             Directory.CreateDirectory(AppConfig.DirectoryPath);
@@ -135,14 +202,15 @@ internal sealed class SettingsForm : Form
         AcceptButton = save;
         CancelButton = cancel;
 
-        Controls.AddRange([intro, _auto, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, _hotkeyInfo, _hotkeyText, _hotkeyButton, _keysInfo, save, cancel, folder]);
+        Controls.AddRange([intro, _auto, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, _hotkeyInfo, _hotkeyText, _hotkeyButton, _lastWordInfo, _lastWordText, _lastWordButton, _selectionInfo, _selectionText, _selectionButton, _keysInfo, save, cancel, folder]);
     }
 
     private void CaptureHotkey(KeyEventArgs e)
     {
         var key = e.KeyCode;
 
-        if (key == Keys.ControlKey ||
+        var isModifierOnly =
+            key == Keys.ControlKey ||
             key == Keys.ShiftKey ||
             key == Keys.Menu ||
             key == Keys.LMenu ||
@@ -152,12 +220,11 @@ internal sealed class SettingsForm : Form
             key == Keys.LShiftKey ||
             key == Keys.RShiftKey ||
             key == Keys.LWin ||
-            key == Keys.RWin ||
-            key == Keys.Pause)
+            key == Keys.RWin;
+
+        // Для автоисправления Pause оставляем под "сменить последнее слово".
+        if (isModifierOnly || (_hotkeyTarget == HotkeyTarget.AutoSwitch && key == Keys.Pause))
         {
-            _hotkeyButton.Text = "Изменить";
-            _capturingHotkey = false;
-            _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
             return;
         }
 
@@ -170,14 +237,34 @@ internal sealed class SettingsForm : Form
             parts.Add("Win");
 
         parts.Add(key.ToString());
-        _hotkeyDraft = string.Join("+", parts);
+        var draft = string.Join("+", parts);
 
-        _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
         _capturingHotkey = false;
-        _hotkeyButton.Text = "Изменить";
+        switch (_hotkeyTarget)
+        {
+            case HotkeyTarget.AutoSwitch:
+                _hotkeyDraft = draft;
+                _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
+                _hotkeyButton.Text = "Изменить";
+                break;
+
+            case HotkeyTarget.LastWord:
+                _lastWordDraft = draft;
+                _lastWordText.Text = FormatHotkey(_lastWordDraft);
+                _lastWordButton.Text = "Изменить";
+                break;
+
+            case HotkeyTarget.Selection:
+                _selectionDraft = draft;
+                _selectionText.Text = FormatHotkey(_selectionDraft);
+                _selectionButton.Text = "Изменить";
+                break;
+        }
 
         _keysInfo.Text =
-            $"{FormatHotkey(_hotkeyDraft)} — вкл/выкл автоисправление\nPause — сменить последнее слово\nShift+Pause — сменить выделенный текст";
+            $"{FormatHotkey(_hotkeyDraft)} — автоисправление (вкл/выкл)\n" +
+            $"{FormatHotkey(_lastWordDraft)} — сменить последнее слово\n" +
+            $"{FormatHotkey(_selectionDraft)} — сменить выделенный текст";
     }
 
     private static string FormatHotkey(string raw)
@@ -211,6 +298,8 @@ internal sealed class SettingsForm : Form
     {
         _config.AutoSwitch = _auto.Checked;
         _config.AutoSwitchHotkey = _hotkeyDraft;
+        _config.HotkeyLastWord = _lastWordDraft;
+        _config.HotkeySelection = _selectionDraft;
         _config.Sound = _sound.Checked;
         _config.SoundStyle = _soundStyle.SelectedIndex == 1 ? SwitchSound.Custom : SwitchSound.Windows;
         _config.RunAtStartup = _startup.Checked;

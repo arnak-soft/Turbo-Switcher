@@ -17,14 +17,18 @@ internal sealed class KeyboardEngine : IDisposable
     private string _buffer = "";
     private Committed? _committed;
     private bool _enabled = true;
-    private AutoSwitchHotkeyDef? _autoSwitchHotkey;
+    private HotkeyDef? _autoSwitchHotkey;
+    private HotkeyDef? _hotkeyLastWord;
+    private HotkeyDef? _hotkeySelection;
 
     public KeyboardEngine(AppConfig config)
     {
         _config = config;
         _detector = new Detector(config.MinWordLength, extraExceptions: config.Exceptions);
         _ignored = ToSet(config.IgnoredProcesses);
-        _autoSwitchHotkey = AutoSwitchHotkeyDef.Parse(config.AutoSwitchHotkey);
+        _autoSwitchHotkey = HotkeyDef.Parse(config.AutoSwitchHotkey);
+        _hotkeyLastWord = HotkeyDef.Parse(config.HotkeyLastWord);
+        _hotkeySelection = HotkeyDef.Parse(config.HotkeySelection);
     }
 
     public event Action? AutoSwitchToggleRequested;
@@ -43,7 +47,9 @@ internal sealed class KeyboardEngine : IDisposable
             _detector = new Detector(config.MinWordLength, extraExceptions: config.Exceptions);
             _ignored = ToSet(config.IgnoredProcesses);
             _enabled = config.AutoSwitch;
-            _autoSwitchHotkey = AutoSwitchHotkeyDef.Parse(config.AutoSwitchHotkey);
+            _autoSwitchHotkey = HotkeyDef.Parse(config.AutoSwitchHotkey);
+            _hotkeyLastWord = HotkeyDef.Parse(config.HotkeyLastWord);
+            _hotkeySelection = HotkeyDef.Parse(config.HotkeySelection);
         }
     }
 
@@ -113,17 +119,23 @@ internal sealed class KeyboardEngine : IDisposable
     {
         lock (_sync)
         {
-            if (IsAutoSwitchHotkey(kb))
+            if (IsHotkey(_autoSwitchHotkey, kb))
             {
                 AutoSwitchToggleRequested?.Invoke();
                 return true; // swallow key to avoid side-effects
             }
 
-            if (kb.vkCode == Native.VkPause)
+            if (IsHotkey(_hotkeyLastWord, kb))
             {
-                var selection = Native.ShiftDown();
                 var snapshot = TakeSnapshot();
-                Enqueue(() => Hotkey(selection, snapshot));
+                Enqueue(() => Hotkey(selection: false, snapshot));
+                return true;
+            }
+
+            if (IsHotkey(_hotkeySelection, kb))
+            {
+                var snapshot = TakeSnapshot();
+                Enqueue(() => Hotkey(selection: true, snapshot));
                 return true;
             }
 
@@ -276,9 +288,9 @@ internal sealed class KeyboardEngine : IDisposable
     private readonly record struct Committed(string Word, string Delimiter);
     private readonly record struct Snapshot(string Word, string Delimiter, int ExtraBackspaces, bool HasWord);
 
-    private readonly record struct AutoSwitchHotkeyDef(Keys Key, bool Ctrl, bool Alt, bool Shift, bool Win)
+    private readonly record struct HotkeyDef(Keys Key, bool Ctrl, bool Alt, bool Shift, bool Win)
     {
-        public static AutoSwitchHotkeyDef? Parse(string? raw)
+        public static HotkeyDef? Parse(string? raw)
         {
             if (string.IsNullOrWhiteSpace(raw))
                 return null;
@@ -318,37 +330,38 @@ internal sealed class KeyboardEngine : IDisposable
 
             // Normalise common aliases to Keys names.
             var upper = keyToken.ToUpperInvariant();
-            if (upper is "SCROLLLOCK" or "SCROLL" )
+            if (upper is "SCROLLLOCK" or "SCROLL")
                 keyToken = "Scroll";
-            else if (upper is "ESC" )
+            else if (upper is "ESC" or "ESCAPE")
                 keyToken = "Escape";
 
             if (!Enum.TryParse(keyToken, ignoreCase: true, out Keys key))
                 return null;
 
-            // Pause is reserved for "сменить последнее слово"
-            if (key == Keys.Pause)
+            // Это основной VK-код, а не модификатор.
+            // Если пользователь введёт что-то вроде "Ctrl" без основной клавиши — вернём null.
+            if (key == Keys.ControlKey || key == Keys.Menu || key == Keys.ShiftKey || key == Keys.LWin || key == Keys.RWin)
                 return null;
 
-            return new AutoSwitchHotkeyDef(key, ctrl, alt, shift, win);
+            return new HotkeyDef(key, ctrl, alt, shift, win);
         }
     }
 
-    private bool IsAutoSwitchHotkey(KBDLLHOOKSTRUCT kb)
+    private bool IsHotkey(HotkeyDef? hotkey, KBDLLHOOKSTRUCT kb)
     {
-        if (_autoSwitchHotkey is not { } hotkey)
+        if (hotkey is not { } hk)
             return false;
 
-        if ((int)kb.vkCode != (int)hotkey.Key)
+        if ((int)kb.vkCode != (int)hk.Key)
             return false;
 
-        if (hotkey.Ctrl != Native.KeyDown(Native.VkControl))
+        if (hk.Ctrl != Native.KeyDown(Native.VkControl))
             return false;
-        if (hotkey.Alt != Native.KeyDown(Native.VkMenu))
+        if (hk.Alt != Native.KeyDown(Native.VkMenu))
             return false;
-        if (hotkey.Shift != Native.KeyDown(Native.VkShift))
+        if (hk.Shift != Native.KeyDown(Native.VkShift))
             return false;
-        if (hotkey.Win != (Native.KeyDown(Native.VkLwin) || Native.KeyDown(Native.VkRwin)))
+        if (hk.Win != (Native.KeyDown(Native.VkLwin) || Native.KeyDown(Native.VkRwin)))
             return false;
 
         return true;
