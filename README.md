@@ -1,19 +1,22 @@
-# Typo Switcher
+# Turbo Switcher
 Бесплатный открытый аналог Punto Switcher для Windows с обычным окном настроек и иконкой в трее.
 
-Собрано на **.NET 8**, не на .NET Framework. `publish.bat` делает один `TypoSwitch.exe` со встроенным runtime: на другой компьютер его можно скопировать как есть, ничего ставить не нужно.
+Собрано на **.NET 8**, не на .NET Framework. `publish.bat` делает два exe.
 
 `ghbdtn` → `привет`, `руддщ` → `hello`. После замены программа переключает раскладку окна.
 
 ## Сборка
 
-Нужен [SDK .NET 8](https://dotnet.microsoft.com/download/dotnet/8.0) только у разработчика. Пользователю SDK не нужен.
+Нужен [SDK .NET 8](https://dotnet.microsoft.com/download/dotnet/8.0) только у разработчика.
 
 ```bat
 publish.bat
 ```
 
-Готовый файл: `publish\TypoSwitch.exe`.
+Готовые файлы:
+
+- `publish\TurboSwitch.exe` — со встроенным runtime, копируется на другой ПК как есть
+- `publish\TurboSwitch-net8.exe` — маленький, на компьютере должен быть [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 Запуск из исходников (нужен SDK):
 
@@ -37,4 +40,4 @@ dotnet test
 - Исключения (`lol`, `github`, `qwe`…) и игнор процессов
 - Caps Lock отключает автозамену
 
-Настройки: `%APPDATA%\Typo Switcher\config.json`.
+Настройки: `%APPDATA%\Turbo Switcher\config.json`.

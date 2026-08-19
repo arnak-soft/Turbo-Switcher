@@ -20,7 +20,7 @@ internal sealed class TrayApplication : ApplicationContext
         {
             Icon = _icon,
             Visible = true,
-            Text = "Typo Switcher",
+            Text = "Turbo Switcher",
             ContextMenuStrip = BuildMenu(),
         };
         _tray.DoubleClick += (_, _) => ShowSettings();
@@ -63,7 +63,7 @@ internal sealed class TrayApplication : ApplicationContext
         _tray.Icon = next;
         _icon.Dispose();
         _icon = next;
-        _tray.Text = _config.AutoSwitch ? "Typo Switcher — вкл" : "Typo Switcher — выкл";
+        _tray.Text = _config.AutoSwitch ? "Turbo Switcher — вкл" : "Turbo Switcher — выкл";
     }
 
     protected override void ExitThreadCore()

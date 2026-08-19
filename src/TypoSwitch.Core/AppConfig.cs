@@ -28,7 +28,7 @@ public sealed class AppConfig
         get
         {
             var root = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-            return Path.Combine(root, "Typo Switcher");
+            return Path.Combine(root, "Turbo Switcher");
         }
     }
 
@@ -37,6 +37,16 @@ public sealed class AppConfig
     public static AppConfig Load()
     {
         Directory.CreateDirectory(DirectoryPath);
+        if (!File.Exists(FilePath))
+        {
+            var legacy = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                "Typo Switcher",
+                "config.json");
+            if (File.Exists(legacy))
+                File.Copy(legacy, FilePath);
+        }
+
         if (!File.Exists(FilePath))
         {
             var created = new AppConfig();

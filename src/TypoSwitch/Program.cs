@@ -5,10 +5,10 @@ internal static class Program
     [STAThread]
     private static void Main()
     {
-        using var mutex = new Mutex(true, @"Local\TypoSwitch.Singleton", out var created);
+        using var mutex = new Mutex(true, @"Local\TurboSwitch.Singleton", out var created);
         if (!created)
         {
-            MessageBox.Show("Typo Switcher уже запущен.", "Typo Switcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Turbo Switcher уже запущен.", "Turbo Switcher", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 

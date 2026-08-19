@@ -9,11 +9,11 @@
     <ApplicationIcon>..\..\assets\app.ico</ApplicationIcon>
     <ApplicationHighDpiMode>PerMonitorV2</ApplicationHighDpiMode>
     <RootNamespace>TypoSwitch</RootNamespace>
-    <AssemblyName>TypoSwitch</AssemblyName>
+    <AssemblyName>TurboSwitch</AssemblyName>
     <Version>1.0.0</Version>
-    <AssemblyTitle>Typo Switcher</AssemblyTitle>
-    <Product>Typo Switcher</Product>
-    <Description>Typo Switcher — исправляет текст, набранный не в той раскладке</Description>
+    <AssemblyTitle>Turbo Switcher</AssemblyTitle>
+    <Product>Turbo Switcher</Product>
+    <Description>Turbo Switcher — исправляет текст, набранный не в той раскладке</Description>
     <InvariantGlobalization>false</InvariantGlobalization>
     <PublishSingleFile>true</PublishSingleFile>
     <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>

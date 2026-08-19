@@ -13,7 +13,7 @@ internal sealed class SettingsForm : Form
     public SettingsForm(AppConfig config)
     {
         _config = config;
-        Text = "Typo Switcher — настройки";
+        Text = "Turbo Switcher — настройки";
         Font = new Font("Segoe UI", 10);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;

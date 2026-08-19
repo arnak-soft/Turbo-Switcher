@@ -47,7 +47,7 @@ internal sealed class KeyboardEngine : IDisposable
         _worker = new Thread(WorkerLoop)
         {
             IsBackground = true,
-            Name = "TypoSwitch.Jobs",
+            Name = "TurboSwitch.Jobs",
         };
         _worker.Start();
         _hookProc = HookCallback;

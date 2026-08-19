@@ -1,4 +1,4 @@
-"""Export Typo Switcher brand PNGs and a multi-size Windows .ico."""
+"""Export Turbo Switcher brand PNGs and a multi-size Windows .ico."""
 
 from __future__ import annotations
 
@@ -99,7 +99,7 @@ def wordmark(*, dark: bool = False, opaque_light: bool = False, scale: int = 4) 
     draw = ImageDraw.Draw(img)
     f = font(72 * scale)
     color = (248, 250, 252) if dark else (15, 23, 42)
-    draw.text((236 * scale, 78 * scale), "Typo Switcher", font=f, fill=color)
+    draw.text((236 * scale, 78 * scale), "Turbo Switcher", font=f, fill=color)
     return img
 
 
@@ -112,7 +112,7 @@ def banner() -> Image.Image:
     img.alpha_composite(mark, (96, 160))
     title = font(72)
     sub = font(28, bold=False)
-    draw.text((480, 236), "Typo Switcher", font=title, fill=(248, 250, 252))
+    draw.text((480, 236), "Turbo Switcher", font=title, fill=(248, 250, 252))
     draw.text((480, 328), "Исправляет текст, набранный не в той раскладке", font=sub, fill=(147, 197, 253))
     return img
 
