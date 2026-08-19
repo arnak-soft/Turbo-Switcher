@@ -1,0 +1,23 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "typoswitch"
+version = "1.0.0"
+description = "Typo Switcher for Windows: fix text typed in the wrong keyboard layout"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+  "pystray>=0.19.5",
+  "pillow>=10.4.0",
+]
+
+[project.scripts]
+typoswitch = "typoswitch.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["typoswitch*"]
+
+[tool.setuptools.package-data]
+typoswitch = ["data/*.txt"]
