@@ -11,19 +11,32 @@ internal sealed class SettingsForm : Form
     private readonly NumericUpDown _minLength = new();
     private readonly TextBox _exceptions = new();
     private readonly TextBox _ignored = new();
+    private readonly TextBox _hotkeyText = new();
+    private readonly Button _hotkeyButton = new();
+    private readonly Label _hotkeyInfo = new();
+    private readonly Label _keysInfo = new();
+    private bool _capturingHotkey;
+    private string _hotkeyDraft;
     private readonly AppConfig _config;
 
     public SettingsForm(AppConfig config)
     {
         _config = config;
+        _hotkeyDraft = config.AutoSwitchHotkey;
         Text = "Turbo Switcher — настройки";
         Font = new Font("Segoe UI", 10);
         FormBorderStyle = FormBorderStyle.FixedDialog;
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(460, 500);
+        ClientSize = new Size(460, 540);
         AutoScaleMode = AutoScaleMode.Font;
+        KeyPreview = true;
+        KeyDown += (_, e) =>
+        {
+            if (!_capturingHotkey) return;
+            CaptureHotkey(e);
+        };
 
         var intro = new Label
         {
@@ -79,17 +92,35 @@ internal sealed class SettingsForm : Form
         _ignored.Size = new Size(428, 27);
         _ignored.Text = string.Join(", ", config.IgnoredProcesses);
 
-        var keys = new Label
+        _hotkeyInfo.Text = "Горячая клавиша (вкл/выкл автоисправление):";
+        _hotkeyInfo.AutoSize = false;
+        _hotkeyInfo.Location = new Point(16, 384);
+        _hotkeyInfo.Size = new Size(220, 27);
+
+        _hotkeyText.ReadOnly = true;
+        _hotkeyText.Location = new Point(250, 380);
+        _hotkeyText.Size = new Size(190, 27);
+        _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
+
+        _hotkeyButton.Text = "Изменить";
+        _hotkeyButton.Location = new Point(296, 408);
+        _hotkeyButton.Size = new Size(144, 30);
+        _hotkeyButton.Click += (_, _) =>
         {
-            Text = "Scroll Lock — вкл/выкл автоисправление\nPause — сменить последнее слово\nShift+Pause — сменить выделенный текст",
-            AutoSize = false,
-            Location = new Point(16, 384),
-            Size = new Size(428, 60),
+            _capturingHotkey = true;
+            _hotkeyButton.Text = "Нажмите комбинацию…";
+            _hotkeyText.Text = "";
+            _hotkeyText.Focus();
         };
 
-        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 448), DialogResult = DialogResult.OK };
-        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 448), DialogResult = DialogResult.Cancel };
-        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 448) };
+        _keysInfo.AutoSize = false;
+        _keysInfo.Location = new Point(16, 440);
+        _keysInfo.Size = new Size(428, 60);
+        _keysInfo.Text = $"{FormatHotkey(_hotkeyDraft)} — вкл/выкл автоисправление\nPause — сменить последнее слово\nShift+Pause — сменить выделенный текст";
+
+        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 488), DialogResult = DialogResult.OK };
+        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 488), DialogResult = DialogResult.Cancel };
+        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 488) };
         folder.Click += (_, _) =>
         {
             Directory.CreateDirectory(AppConfig.DirectoryPath);
@@ -104,7 +135,68 @@ internal sealed class SettingsForm : Form
         AcceptButton = save;
         CancelButton = cancel;
 
-        Controls.AddRange([intro, _auto, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, keys, save, cancel, folder]);
+        Controls.AddRange([intro, _auto, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, _hotkeyInfo, _hotkeyText, _hotkeyButton, _keysInfo, save, cancel, folder]);
+    }
+
+    private void CaptureHotkey(KeyEventArgs e)
+    {
+        var key = e.KeyCode;
+
+        if (key == Keys.ControlKey ||
+            key == Keys.ShiftKey ||
+            key == Keys.Menu ||
+            key == Keys.LMenu ||
+            key == Keys.RMenu ||
+            key == Keys.LControlKey ||
+            key == Keys.RControlKey ||
+            key == Keys.LShiftKey ||
+            key == Keys.RShiftKey ||
+            key == Keys.LWin ||
+            key == Keys.RWin ||
+            key == Keys.Pause)
+        {
+            _hotkeyButton.Text = "Изменить";
+            _capturingHotkey = false;
+            _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
+            return;
+        }
+
+        var parts = new List<string>(4);
+        if (e.Control) parts.Add("Ctrl");
+        if (e.Alt) parts.Add("Alt");
+        if (e.Shift) parts.Add("Shift");
+
+        if ((e.Modifiers & Keys.LWin) == Keys.LWin || (e.Modifiers & Keys.RWin) == Keys.RWin)
+            parts.Add("Win");
+
+        parts.Add(key.ToString());
+        _hotkeyDraft = string.Join("+", parts);
+
+        _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
+        _capturingHotkey = false;
+        _hotkeyButton.Text = "Изменить";
+
+        _keysInfo.Text =
+            $"{FormatHotkey(_hotkeyDraft)} — вкл/выкл автоисправление\nPause — сменить последнее слово\nShift+Pause — сменить выделенный текст";
+    }
+
+    private static string FormatHotkey(string raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+            return "—";
+
+        var parts = raw.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < parts.Length; i++)
+        {
+            var p = parts[i];
+            if (p.Equals("Scroll", StringComparison.OrdinalIgnoreCase))
+                parts[i] = "Scroll Lock";
+            else if (p.Equals("Pause", StringComparison.OrdinalIgnoreCase))
+                parts[i] = "Pause";
+            else if (p.Equals("Escape", StringComparison.OrdinalIgnoreCase) || p.Equals("Esc", StringComparison.OrdinalIgnoreCase))
+                parts[i] = "Esc";
+        }
+        return string.Join("+", parts);
     }
 
     private void ConfigureCheck(CheckBox box, string text, int top, bool value)
@@ -118,6 +210,7 @@ internal sealed class SettingsForm : Form
     private void Apply()
     {
         _config.AutoSwitch = _auto.Checked;
+        _config.AutoSwitchHotkey = _hotkeyDraft;
         _config.Sound = _sound.Checked;
         _config.SoundStyle = _soundStyle.SelectedIndex == 1 ? SwitchSound.Custom : SwitchSound.Windows;
         _config.RunAtStartup = _startup.Checked;

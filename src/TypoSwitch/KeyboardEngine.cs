@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace TypoSwitch;
 
@@ -16,12 +17,14 @@ internal sealed class KeyboardEngine : IDisposable
     private string _buffer = "";
     private Committed? _committed;
     private bool _enabled = true;
+    private AutoSwitchHotkeyDef? _autoSwitchHotkey;
 
     public KeyboardEngine(AppConfig config)
     {
         _config = config;
         _detector = new Detector(config.MinWordLength, extraExceptions: config.Exceptions);
         _ignored = ToSet(config.IgnoredProcesses);
+        _autoSwitchHotkey = AutoSwitchHotkeyDef.Parse(config.AutoSwitchHotkey);
     }
 
     public event Action? AutoSwitchToggleRequested;
@@ -40,6 +43,7 @@ internal sealed class KeyboardEngine : IDisposable
             _detector = new Detector(config.MinWordLength, extraExceptions: config.Exceptions);
             _ignored = ToSet(config.IgnoredProcesses);
             _enabled = config.AutoSwitch;
+            _autoSwitchHotkey = AutoSwitchHotkeyDef.Parse(config.AutoSwitchHotkey);
         }
     }
 
@@ -109,17 +113,17 @@ internal sealed class KeyboardEngine : IDisposable
     {
         lock (_sync)
         {
+            if (IsAutoSwitchHotkey(kb))
+            {
+                AutoSwitchToggleRequested?.Invoke();
+                return true; // swallow key to avoid side-effects
+            }
+
             if (kb.vkCode == Native.VkPause)
             {
                 var selection = Native.ShiftDown();
                 var snapshot = TakeSnapshot();
                 Enqueue(() => Hotkey(selection, snapshot));
-                return true;
-            }
-
-            if (kb.vkCode == Native.VkScroll)
-            {
-                AutoSwitchToggleRequested?.Invoke();
                 return true;
             }
 
@@ -271,4 +275,82 @@ internal sealed class KeyboardEngine : IDisposable
 
     private readonly record struct Committed(string Word, string Delimiter);
     private readonly record struct Snapshot(string Word, string Delimiter, int ExtraBackspaces, bool HasWord);
+
+    private readonly record struct AutoSwitchHotkeyDef(Keys Key, bool Ctrl, bool Alt, bool Shift, bool Win)
+    {
+        public static AutoSwitchHotkeyDef? Parse(string? raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw))
+                return null;
+
+            var s = raw.Trim();
+            if (s.Equals("none", StringComparison.OrdinalIgnoreCase) ||
+                s.Equals("disable", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            var parts = s.Split('+', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length == 0)
+                return null;
+
+            var ctrl = false;
+            var alt = false;
+            var shift = false;
+            var win = false;
+            string? keyToken = null;
+
+            foreach (var p in parts)
+            {
+                var t = p.Trim();
+                if (t.Equals("Ctrl", StringComparison.OrdinalIgnoreCase) || t.Equals("Control", StringComparison.OrdinalIgnoreCase))
+                    ctrl = true;
+                else if (t.Equals("Alt", StringComparison.OrdinalIgnoreCase))
+                    alt = true;
+                else if (t.Equals("Shift", StringComparison.OrdinalIgnoreCase))
+                    shift = true;
+                else if (t.Equals("Win", StringComparison.OrdinalIgnoreCase) || t.Equals("Windows", StringComparison.OrdinalIgnoreCase) || t.Equals("Meta", StringComparison.OrdinalIgnoreCase))
+                    win = true;
+                else
+                    keyToken = t;
+            }
+
+            if (keyToken is null)
+                return null;
+
+            // Normalise common aliases to Keys names.
+            var upper = keyToken.ToUpperInvariant();
+            if (upper is "SCROLLLOCK" or "SCROLL" )
+                keyToken = "Scroll";
+            else if (upper is "ESC" )
+                keyToken = "Escape";
+
+            if (!Enum.TryParse(keyToken, ignoreCase: true, out Keys key))
+                return null;
+
+            // Pause is reserved for "сменить последнее слово"
+            if (key == Keys.Pause)
+                return null;
+
+            return new AutoSwitchHotkeyDef(key, ctrl, alt, shift, win);
+        }
+    }
+
+    private bool IsAutoSwitchHotkey(KBDLLHOOKSTRUCT kb)
+    {
+        if (_autoSwitchHotkey is not { } hotkey)
+            return false;
+
+        if ((int)kb.vkCode != (int)hotkey.Key)
+            return false;
+
+        if (hotkey.Ctrl != Native.KeyDown(Native.VkControl))
+            return false;
+        if (hotkey.Alt != Native.KeyDown(Native.VkMenu))
+            return false;
+        if (hotkey.Shift != Native.KeyDown(Native.VkShift))
+            return false;
+        if (hotkey.Win != (Native.KeyDown(Native.VkLwin) || Native.KeyDown(Native.VkRwin)))
+            return false;
+
+        return true;
+    }
 }

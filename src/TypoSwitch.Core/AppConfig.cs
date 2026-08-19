@@ -8,6 +8,11 @@ public sealed class AppConfig
     [JsonPropertyName("auto_switch")]
     public bool AutoSwitch { get; set; } = true;
 
+    // Горячая клавиша переключения автозамены (AutoSwitch).
+    // Формат: "Ctrl+Shift+L", "Scroll", "Alt+K" и т.п.
+    [JsonPropertyName("auto_switch_hotkey")]
+    public string AutoSwitchHotkey { get; set; } = "Scroll";
+
     [JsonPropertyName("sound")]
     public bool Sound { get; set; }
 
