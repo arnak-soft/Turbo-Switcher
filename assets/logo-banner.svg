@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" role="img" aria-label="Typo Switcher">
+  <defs>
+    <linearGradient id="page" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B1220"/>
+      <stop offset="100%" stop-color="#111827"/>
+    </linearGradient>
+    <linearGradient id="bg" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#6BA6FF"/>
+      <stop offset="48%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1E40AF"/>
+    </linearGradient>
+    <clipPath id="squircle">
+      <rect x="96" y="160" width="320" height="320" rx="72"/>
+    </clipPath>
+  </defs>
+  <rect width="1280" height="640" fill="url(#page)"/>
+  <circle cx="1040" cy="-40" r="280" fill="#2563EB" opacity=".18"/>
+  <circle cx="1180" cy="700" r="220" fill="#1D4ED8" opacity=".16"/>
+  <rect x="96" y="160" width="320" height="320" rx="72" fill="url(#bg)"/>
+  <g clip-path="url(#squircle)">
+    <ellipse cx="256" cy="140" rx="180" ry="100" fill="#fff" opacity=".16"/>
+  </g>
+  <text
+    x="256"
+    y="340"
+    text-anchor="middle"
+    font-family="Segoe UI, Inter, Arial, sans-serif"
+    font-size="112"
+    font-weight="700"
+    fill="#fff"
+    letter-spacing="-6"
+  >A/</text>
+  <g fill="none" stroke="#fff" stroke-width="14" stroke-linecap="round" transform="translate(256 408) scale(.72)">
+    <path d="M -42 -10 a 44 44 0 0 1 72 18"/>
+    <path d="M 42 10 a 44 44 0 0 1 -72 -18"/>
+    <path d="M 22 -8 l 10 16 h -18 z" fill="#fff" stroke="none"/>
+    <path d="M -22 8 l -10 -16 h 18 z" fill="#fff" stroke="none"/>
+  </g>
+  <text
+    x="480"
+    y="292"
+    font-family="Segoe UI, Inter, Arial, sans-serif"
+    font-size="72"
+    font-weight="700"
+    fill="#F8FAFC"
+  >Typo Switcher</text>
+  <text
+    x="480"
+    y="360"
+    font-family="Segoe UI, Inter, Arial, sans-serif"
+    font-size="28"
+    font-weight="400"
+    fill="#93C5FD"
+  >A?@02;O5B B5:AB, =01@0==K9 =5 2 B>9 @0A:;04:5</text>
+</svg>

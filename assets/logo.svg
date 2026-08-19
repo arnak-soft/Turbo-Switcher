@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Typo Switcher">
+  <defs>
+    <linearGradient id="bg" x1="8%" y1="0%" x2="92%" y2="100%">
+      <stop offset="0%" stop-color="#6BA6FF"/>
+      <stop offset="48%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1E40AF"/>
+    </linearGradient>
+    <clipPath id="squircle">
+      <rect width="512" height="512" rx="112"/>
+    </clipPath>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g clip-path="url(#squircle)" pointer-events="none">
+    <ellipse cx="256" cy="-20" rx="280" ry="160" fill="#fff" opacity=".16"/>
+  </g>
+  <text
+    x="256"
+    y="268"
+    text-anchor="middle"
+    font-family="Segoe UI, Inter, Arial, sans-serif"
+    font-size="176"
+    font-weight="700"
+    fill="#fff"
+    letter-spacing="-10"
+  >A/</text>
+  <g fill="none" stroke="#fff" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" transform="translate(256 372) scale(1.15)">
+    <path d="M -42 -10 a 44 44 0 0 1 72 18"/>
+    <path d="M 42 10 a 44 44 0 0 1 -72 -18"/>
+    <path d="M 22 -8 l 10 16 h -18 z" fill="#fff" stroke="none"/>
+    <path d="M -22 8 l -10 -16 h 18 z" fill="#fff" stroke="none"/>
+  </g>
+</svg>

@@ -13,19 +13,33 @@ internal static class AppIcon
         using var bmp = new Bitmap(32, 32);
         using var g = Graphics.FromImage(bmp);
         g.SmoothingMode = SmoothingMode.AntiAlias;
+        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
         g.Clear(Color.Transparent);
         var fill = enabled ? Color.FromArgb(37, 99, 235) : Color.FromArgb(107, 114, 128);
+        using (var path = RoundedRect(1, 1, 30, 30, 8))
         using (var brush = new SolidBrush(fill))
-            g.FillEllipse(brush, 1, 1, 30, 30);
-        using var font = new Font("Segoe UI", 10f, FontStyle.Bold, GraphicsUnit.Pixel);
+            g.FillPath(brush, path);
+        using var font = new Font("Segoe UI", 11f, FontStyle.Bold, GraphicsUnit.Pixel);
         var text = "AЯ";
         var size = g.MeasureString(text, font);
-        g.DrawString(text, font, Brushes.White, (32 - size.Width) / 2, (32 - size.Height) / 2);
+        g.DrawString(text, font, Brushes.White, (32 - size.Width) / 2, (32 - size.Height) / 2 + 0.5f);
 
         var handle = bmp.GetHicon();
         using var temp = Icon.FromHandle(handle);
         var clone = (Icon)temp.Clone();
         DestroyIcon(handle);
         return clone;
+    }
+
+    private static GraphicsPath RoundedRect(int x, int y, int width, int height, int radius)
+    {
+        var path = new GraphicsPath();
+        var d = radius * 2;
+        path.AddArc(x, y, d, d, 180, 90);
+        path.AddArc(x + width - d, y, d, d, 270, 90);
+        path.AddArc(x + width - d, y + height - d, d, d, 0, 90);
+        path.AddArc(x, y + height - d, d, d, 90, 90);
+        path.CloseFigure();
+        return path;
     }
 }
