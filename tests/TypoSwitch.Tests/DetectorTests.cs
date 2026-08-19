@@ -67,4 +67,18 @@ public class DetectorTests
         Assert.False(_detector.ShouldSwitch("win10"));
         Assert.False(_detector.ShouldSwitch("ghbdtn2"));
     }
+
+    [Theory]
+    [InlineData("интерфейс")]
+    [InlineData("программирование")]
+    public void KeepsRussianNotInDictionary(string word) =>
+        Assert.False(_detector.ShouldSwitch(word), _detector.Analyze(word).ToString());
+
+    [Fact]
+    public void DoesNotSwitchToNonsenseEnglish()
+    {
+        var result = _detector.Analyze("интерфейс");
+        Assert.False(result.ShouldSwitch, result.ToString());
+        Assert.Equal("converted_unknown", result.Reason);
+    }
 }

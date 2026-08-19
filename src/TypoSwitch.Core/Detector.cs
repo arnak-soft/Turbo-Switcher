@@ -92,15 +92,14 @@ public sealed class Detector
         var converted = Layouts.Invert(cleaned);
         var originalScore = Score(cleaned);
         var convertedScore = Score(converted);
+        var convKey = converted.ToLowerInvariant();
+        var convLetters = LettersOnly(convKey);
 
         if (_en.Contains(key) || _ru.Contains(key))
-        {
-            var convKey = converted.ToLowerInvariant();
-            if (!_en.Contains(convKey) && !_ru.Contains(convKey))
-                return Keep("known_word", converted, originalScore, convertedScore);
-            if (originalScore >= convertedScore)
-                return Keep("known_word", converted, originalScore, convertedScore);
-        }
+            return Keep("known_word", converted, originalScore, convertedScore);
+
+        if (!IsKnownInTarget(convKey, letters) && !IsKnownInTarget(convLetters, letters))
+            return Keep("converted_unknown", converted, originalScore, convertedScore);
 
         if (convertedScore >= originalScore + _margin)
         {
@@ -180,5 +179,15 @@ public sealed class Detector
                 return 2.2;
         }
         return 0;
+    }
+
+    private bool IsKnownInTarget(string word, string originalLetters)
+    {
+        if (word.Length == 0) return false;
+        if (Layouts.IsLatin(originalLetters))
+            return _ru.Contains(word);
+        if (Layouts.IsCyrillic(originalLetters))
+            return _en.Contains(word);
+        return false;
     }
 }
