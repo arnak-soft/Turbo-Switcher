@@ -13,6 +13,8 @@ if not defined TAG (
   set "VER=!TAG:v=!"
 )
 set "VER_PROP=-p:Version=%VER%"
+set "VER_INFO=%VER%"
+if /i "%VER:~-4%"=="-dev" set "VER_INFO=0.0.0.0"
 
 set "FULL_NAME=TurboSwitcher %VER%.exe"
 set "NET8_NAME=TurboSwitcher %VER%-net8.exe"
@@ -40,3 +42,17 @@ echo   publish\%NET8_NAME%  — маленький, нужен .NET 8 Desktop Ru
 echo   https://dotnet.microsoft.com/download/dotnet/8.0
 echo.
 dir "%OUT%\%FULL_NAME%" "%OUT%\%NET8_NAME%"
+
+echo.
+echo === Installer (Inno Setup 6) ===
+set "ISCC="
+if exist "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" set "ISCC=C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+if exist "C:\Program Files\Inno Setup 6\ISCC.exe" set "ISCC=C:\Program Files\Inno Setup 6\ISCC.exe"
+if defined ISCC (
+  "%ISCC%" /DMyAppVersion=%VER% /DMyAppVersionInfo=%VER_INFO% installer\TurboSwitcher.iss
+  if errorlevel 1 exit /b 1
+  echo   publish\TurboSwitcher Setup %VER%.exe
+) else (
+  echo Inno Setup 6 не найден — установщик не собран.
+  echo Скачать: https://jrsoftware.org/isdl.php
+)
