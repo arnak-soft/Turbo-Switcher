@@ -11,6 +11,9 @@ public sealed class AppConfig
     [JsonPropertyName("sound")]
     public bool Sound { get; set; }
 
+    [JsonPropertyName("sound_style")]
+    public string SoundStyle { get; set; } = "windows";
+
     [JsonPropertyName("min_word_length")]
     public int MinWordLength { get; set; } = 3;
 
@@ -22,6 +25,9 @@ public sealed class AppConfig
 
     [JsonPropertyName("run_at_startup")]
     public bool RunAtStartup { get; set; }
+
+    [JsonPropertyName("check_updates")]
+    public bool CheckUpdates { get; set; } = true;
 
     public static string DirectoryPath
     {

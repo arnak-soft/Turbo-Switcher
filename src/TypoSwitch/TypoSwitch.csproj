@@ -30,4 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\TypoSwitch.Core\TypoSwitch.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\assets\switch.wav" Link="Assets\switch.wav" />
+  </ItemGroup>
 </Project>

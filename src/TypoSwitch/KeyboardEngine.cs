@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Media;
 using System.Runtime.InteropServices;
 
 namespace TypoSwitch;
@@ -194,7 +193,8 @@ internal sealed class KeyboardEngine : IDisposable
         _committed = null;
         var converted = result.Converted;
         var sound = _config.Sound;
-        Enqueue(() => Replace(word, converted, delimiter, sound));
+        var soundStyle = _config.SoundStyle;
+        Enqueue(() => Replace(word, converted, delimiter, sound, soundStyle));
         return true;
     }
 
@@ -229,10 +229,10 @@ internal sealed class KeyboardEngine : IDisposable
             Native.Backspace(snapshot.ExtraBackspaces);
         }
 
-        Replace(snapshot.Word, Layouts.Invert(snapshot.Word), snapshot.Delimiter, _config.Sound);
+        Replace(snapshot.Word, Layouts.Invert(snapshot.Word), snapshot.Delimiter, _config.Sound, _config.SoundStyle);
     }
 
-    private static void Replace(string old, string converted, string delimiter, bool beep)
+    private static void Replace(string old, string converted, string delimiter, bool beep, string soundStyle)
     {
         Thread.Sleep(20);
         Native.Backspace(old.Length);
@@ -240,11 +240,7 @@ internal sealed class KeyboardEngine : IDisposable
         if (delimiter.Length > 0)
             Native.TypeText(delimiter);
         Native.SwitchToScript(converted);
-        if (beep)
-        {
-            try { SystemSounds.Asterisk.Play(); }
-            catch { /* ignore */ }
-        }
+        SwitchSound.Play(beep, soundStyle);
     }
 
     private static void ConvertSelection()

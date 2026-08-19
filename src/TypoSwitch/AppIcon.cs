@@ -8,7 +8,7 @@ internal static class AppIcon
     [DllImport("user32.dll", SetLastError = true)]
     private static extern bool DestroyIcon(IntPtr hIcon);
 
-    public static Icon Create(bool enabled)
+    public static Icon Create(bool enabled, bool hasUpdate = false)
     {
         using var bmp = new Bitmap(32, 32);
         using var g = Graphics.FromImage(bmp);
@@ -23,6 +23,14 @@ internal static class AppIcon
         var text = "AЯ";
         var size = g.MeasureString(text, font);
         g.DrawString(text, font, Brushes.White, (32 - size.Width) / 2, (32 - size.Height) / 2 + 0.5f);
+
+        if (hasUpdate)
+        {
+            using var dot = new SolidBrush(Color.FromArgb(59, 130, 246));
+            g.FillEllipse(dot, 21, 1, 9, 9);
+            using var ring = new Pen(Color.White, 1.5f);
+            g.DrawEllipse(ring, 21, 1, 9, 9);
+        }
 
         var handle = bmp.GetHicon();
         using var temp = Icon.FromHandle(handle);
