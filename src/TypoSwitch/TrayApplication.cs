@@ -7,6 +7,7 @@ internal sealed class TrayApplication : ApplicationContext
     private readonly Control _ui = new();
     private readonly ToolStripMenuItem _updateItem;
     private readonly ToolStripSeparator _updateSeparator;
+    private readonly ToolStripMenuItem _autoMenuItem;
     private AppConfig _config;
     private Icon _icon;
     private SettingsForm? _settings;
@@ -19,18 +20,25 @@ internal sealed class TrayApplication : ApplicationContext
         StartupShortcut.Apply(_config.RunAtStartup);
         _engine = new KeyboardEngine(_config);
         _engine.Enabled = _config.AutoSwitch;
+        _engine.AutoSwitchToggleRequested += () => _ui.BeginInvoke(ToggleAutoSwitch);
         _engine.Start();
 
         _updateItem = new ToolStripMenuItem("Скачать обновление") { Visible = false };
         _updateItem.Click += (_, _) => OpenUpdatePage();
         _updateSeparator = new ToolStripSeparator { Visible = false };
+        _autoMenuItem = new ToolStripMenuItem("Автоисправление")
+        {
+            Checked = _config.AutoSwitch,
+            CheckOnClick = true,
+        };
+        _autoMenuItem.CheckedChanged += (_, _) => SetAutoSwitch(_autoMenuItem.Checked, notify: false);
 
         _icon = AppIcon.Create(_config.AutoSwitch);
         _tray = new NotifyIcon
         {
             Icon = _icon,
             Visible = true,
-            Text = "Turbo Switcher",
+            Text = TrayText(),
             ContextMenuStrip = BuildMenu(),
         };
         _tray.DoubleClick += (_, _) => ShowSettings();
@@ -54,22 +62,34 @@ internal sealed class TrayApplication : ApplicationContext
         var menu = new ContextMenuStrip();
         menu.Items.Add(_updateItem);
         menu.Items.Add(_updateSeparator);
-
-        var auto = new ToolStripMenuItem("Автоисправление") { Checked = _config.AutoSwitch, CheckOnClick = true };
-        auto.CheckedChanged += (_, _) =>
-        {
-            _config.AutoSwitch = auto.Checked;
-            _engine.Enabled = auto.Checked;
-            _config.Save();
-            RefreshIcon();
-        };
-        menu.Items.Add(auto);
+        menu.Items.Add(_autoMenuItem);
         menu.Items.Add("Сменить последнее слово (Pause)", null, (_, _) => _engine.ConvertLastWord());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Настройки…", null, (_, _) => ShowSettings());
         menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add("Выход", null, (_, _) => ExitThread());
         return menu;
+    }
+
+    private void ToggleAutoSwitch() => SetAutoSwitch(!_config.AutoSwitch, notify: true);
+
+    private void SetAutoSwitch(bool enabled, bool notify)
+    {
+        _config.AutoSwitch = enabled;
+        _engine.Enabled = enabled;
+        _config.Save();
+        _autoMenuItem.Checked = enabled;
+        RefreshIcon();
+
+        if (!notify) return;
+
+        var status = enabled ? "включено" : "выключено";
+        _tray.ShowBalloonTip(
+            2500,
+            "Turbo Switcher",
+            $"Автоисправление {status}",
+            enabled ? ToolTipIcon.Info : ToolTipIcon.Warning);
+        SwitchSound.PlayToggle(enabled);
     }
 
     private void StartUpdateChecker()
@@ -124,9 +144,8 @@ internal sealed class TrayApplication : ApplicationContext
             var checkUpdatesBefore = _config.CheckUpdates;
             _config = AppConfig.Load();
             _engine.Reload(_config);
+            _autoMenuItem.Checked = _config.AutoSwitch;
             RefreshIcon();
-            if (_tray.ContextMenuStrip is { } menu && menu.Items[2] is ToolStripMenuItem item)
-                item.Checked = _config.AutoSwitch;
             if (checkUpdatesBefore != _config.CheckUpdates)
                 StartUpdateChecker();
         }
@@ -136,15 +155,22 @@ internal sealed class TrayApplication : ApplicationContext
         }
     }
 
+    private string TrayText()
+    {
+        if (_updateInfo is { } update)
+            return $"Turbo Switcher — доступно обновление {update.Version}";
+        return _config.AutoSwitch
+            ? "Turbo Switcher — автоисправление вкл"
+            : "Turbo Switcher — автоисправление выкл";
+    }
+
     private void RefreshIcon()
     {
         var next = AppIcon.Create(_config.AutoSwitch, _updateInfo is not null);
         _tray.Icon = next;
         _icon.Dispose();
         _icon = next;
-        _tray.Text = _updateInfo is { } update
-            ? $"Turbo Switcher — доступно обновление {update.Version}"
-            : _config.AutoSwitch ? "Turbo Switcher — вкл" : "Turbo Switcher — выкл";
+        _tray.Text = TrayText();
     }
 
     protected override void ExitThreadCore()

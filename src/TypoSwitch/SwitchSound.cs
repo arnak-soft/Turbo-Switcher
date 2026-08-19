@@ -27,6 +27,21 @@ internal static class SwitchSound
         }
     }
 
+    public static void PlayToggle(bool enabled)
+    {
+        try
+        {
+            if (enabled)
+                SystemSounds.Asterisk.Play();
+            else
+                SystemSounds.Exclamation.Play();
+        }
+        catch
+        {
+            // ignore playback errors
+        }
+    }
+
     private static SoundPlayer? LoadCustom()
     {
         var assembly = Assembly.GetExecutingAssembly();

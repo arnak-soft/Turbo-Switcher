@@ -24,6 +24,8 @@ internal sealed class KeyboardEngine : IDisposable
         _ignored = ToSet(config.IgnoredProcesses);
     }
 
+    public event Action? AutoSwitchToggleRequested;
+
     public bool Enabled
     {
         get => _enabled;
@@ -112,6 +114,12 @@ internal sealed class KeyboardEngine : IDisposable
                 var selection = Native.ShiftDown();
                 var snapshot = TakeSnapshot();
                 Enqueue(() => Hotkey(selection, snapshot));
+                return true;
+            }
+
+            if (kb.vkCode == Native.VkScroll)
+            {
+                AutoSwitchToggleRequested?.Invoke();
                 return true;
             }
 

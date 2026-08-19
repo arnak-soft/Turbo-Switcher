@@ -24,6 +24,12 @@ internal static class AppIcon
         var size = g.MeasureString(text, font);
         g.DrawString(text, font, Brushes.White, (32 - size.Width) / 2, (32 - size.Height) / 2 + 0.5f);
 
+        if (!enabled)
+        {
+            using var offPen = new Pen(Color.FromArgb(248, 113, 113), 2.5f);
+            g.DrawLine(offPen, 5, 27, 27, 5);
+        }
+
         if (hasUpdate)
         {
             using var dot = new SolidBrush(Color.FromArgb(59, 130, 246));

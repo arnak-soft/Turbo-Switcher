@@ -21,6 +21,7 @@ internal static class Native
     public const int VkControl = 0x11;
     public const int VkMenu = 0x12;
     public const int VkPause = 0x13;
+    public const int VkScroll = 0x91;
     public const int VkCapital = 0x14;
     public const int VkEscape = 0x1B;
     public const int VkSpace = 0x20;

@@ -190,7 +190,7 @@ var
 begin
   if CurStep = ssPostInstall then
   begin
-    RunAtStartup := IsTaskSelected('startup');
+    RunAtStartup := WizardIsTaskSelected('startup');
     UpdateRunAtStartupInConfig(RunAtStartup);
     RemoveLegacyStartupShortcuts;
     ApplyStartupShortcut(RunAtStartup);

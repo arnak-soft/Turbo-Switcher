@@ -81,10 +81,10 @@ internal sealed class SettingsForm : Form
 
         var keys = new Label
         {
-            Text = "Pause — сменить последнее слово\nShift+Pause — сменить выделенный текст",
+            Text = "Scroll Lock — вкл/выкл автоисправление\nPause — сменить последнее слово\nShift+Pause — сменить выделенный текст",
             AutoSize = false,
             Location = new Point(16, 384),
-            Size = new Size(428, 44),
+            Size = new Size(428, 60),
         };
 
         var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 448), DialogResult = DialogResult.OK };
