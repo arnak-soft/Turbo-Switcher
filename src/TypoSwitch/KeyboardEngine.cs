@@ -6,6 +6,8 @@ namespace TypoSwitch;
 
 internal sealed class KeyboardEngine : IDisposable
 {
+    private const int UndoWindowMs = 2500;
+
     private readonly BlockingCollection<Action> _jobs = new();
     private readonly object _sync = new();
     private Native.LowLevelKeyboardProc? _hookProc;
@@ -16,6 +18,8 @@ internal sealed class KeyboardEngine : IDisposable
     private HashSet<string> _ignored;
     private string _buffer = "";
     private Committed? _committed;
+    private Correction? _pendingUndo;
+    private long _pendingUndoAt;
     private bool _enabled = true;
     private HotkeyDef? _autoSwitchHotkey;
     private HotkeyDef? _hotkeyLastWord;
@@ -121,6 +125,7 @@ internal sealed class KeyboardEngine : IDisposable
         {
             if (IsHotkey(_autoSwitchHotkey, kb))
             {
+                ClearPendingUndo();
                 AutoSwitchToggleRequested?.Invoke();
                 return true; // swallow key to avoid side-effects
             }
@@ -142,6 +147,7 @@ internal sealed class KeyboardEngine : IDisposable
             if (Native.ModifierDown())
             {
                 _buffer = "";
+                ClearPendingUndo();
                 return false;
             }
 
@@ -149,11 +155,14 @@ internal sealed class KeyboardEngine : IDisposable
             if (process.Length > 0 && _ignored.Contains(process))
             {
                 _buffer = "";
+                ClearPendingUndo();
                 return false;
             }
 
             if (kb.vkCode == Native.VkBack)
             {
+                if (TryUndoAutoReplace())
+                    return true;
                 if (_buffer.Length > 0) _buffer = _buffer[..^1];
                 else _committed = null;
                 return false;
@@ -163,6 +172,7 @@ internal sealed class KeyboardEngine : IDisposable
             {
                 _buffer = "";
                 _committed = null;
+                ClearPendingUndo();
                 return false;
             }
 
@@ -171,6 +181,8 @@ internal sealed class KeyboardEngine : IDisposable
             {
                 if (kb.vkCode is Native.VkTab or Native.VkReturn)
                     return FinishWord(kb.vkCode == Native.VkReturn ? "\n" : "\t");
+                // Стрелки, Delete и т.п. — курсор ушёл, отмена автозамены больше небезопасна.
+                ClearPendingUndo();
                 return false;
             }
 
@@ -178,6 +190,7 @@ internal sealed class KeyboardEngine : IDisposable
             {
                 _buffer += ch;
                 _committed = null;
+                ClearPendingUndo();
                 return false;
             }
 
@@ -198,12 +211,14 @@ internal sealed class KeyboardEngine : IDisposable
         if (word.Length == 0)
         {
             _committed = null;
+            ClearPendingUndo();
             return false;
         }
 
         if (!_enabled || !_config.AutoSwitch || Native.CapsOn())
         {
             _committed = new Committed(word, delimiter);
+            ClearPendingUndo();
             return false;
         }
 
@@ -211,11 +226,14 @@ internal sealed class KeyboardEngine : IDisposable
         if (!result.ShouldSwitch)
         {
             _committed = new Committed(word, delimiter);
+            ClearPendingUndo();
             return false;
         }
 
-        _committed = null;
         var converted = result.Converted;
+        _committed = new Committed(converted, delimiter);
+        _pendingUndo = new Correction(word, converted, delimiter, Native.GetForegroundWindow());
+        _pendingUndoAt = Environment.TickCount64;
         var sound = _config.Sound;
         var soundStyle = _config.SoundStyle;
         Enqueue(() => Replace(word, converted, delimiter, sound, soundStyle));
@@ -224,6 +242,7 @@ internal sealed class KeyboardEngine : IDisposable
 
     private Snapshot TakeSnapshot()
     {
+        ClearPendingUndo();
         if (_buffer.Length > 0)
         {
             var snap = new Snapshot(_buffer, "", 0, true);
@@ -237,6 +256,29 @@ internal sealed class KeyboardEngine : IDisposable
             return snap;
         }
         return new Snapshot("", "", 0, false);
+    }
+
+    private void ClearPendingUndo() => _pendingUndo = null;
+
+    private bool TryUndoAutoReplace()
+    {
+        if (!_config.UndoBackspace || _pendingUndo is not { } corr)
+            return false;
+
+        if (_buffer.Length > 0 ||
+            Environment.TickCount64 - _pendingUndoAt > UndoWindowMs ||
+            Native.GetForegroundWindow() != corr.Hwnd)
+        {
+            ClearPendingUndo();
+            return false;
+        }
+
+        ClearPendingUndo();
+        _committed = new Committed(corr.Original, corr.Delimiter);
+        var sound = _config.Sound;
+        var soundStyle = _config.SoundStyle;
+        Enqueue(() => UndoReplace(corr, sound, soundStyle));
+        return true;
     }
 
     private void Hotkey(bool selection, Snapshot snapshot)
@@ -267,6 +309,17 @@ internal sealed class KeyboardEngine : IDisposable
         SwitchSound.Play(beep, soundStyle);
     }
 
+    private static void UndoReplace(Correction corr, bool beep, string soundStyle)
+    {
+        Thread.Sleep(20);
+        Native.Backspace(corr.Converted.Length + corr.Delimiter.Length);
+        Native.TypeText(corr.Original);
+        if (corr.Delimiter.Length > 0)
+            Native.TypeText(corr.Delimiter);
+        Native.SwitchToScript(corr.Original);
+        SwitchSound.Play(beep, soundStyle);
+    }
+
     private static void ConvertSelection()
     {
         Thread.Sleep(20);
@@ -286,6 +339,7 @@ internal sealed class KeyboardEngine : IDisposable
         items.Select(p => p.Trim().ToLowerInvariant()).Where(p => p.Length > 0).ToHashSet();
 
     private readonly record struct Committed(string Word, string Delimiter);
+    private readonly record struct Correction(string Original, string Converted, string Delimiter, IntPtr Hwnd);
     private readonly record struct Snapshot(string Word, string Delimiter, int ExtraBackspaces, bool HasWord);
 
     private readonly record struct HotkeyDef(Keys Key, bool Ctrl, bool Alt, bool Shift, bool Win)

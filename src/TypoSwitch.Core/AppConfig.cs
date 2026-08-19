@@ -8,6 +8,10 @@ public sealed class AppConfig
     [JsonPropertyName("auto_switch")]
     public bool AutoSwitch { get; set; } = true;
 
+    // Backspace сразу после автозамены возвращает исходное слово.
+    [JsonPropertyName("undo_backspace")]
+    public bool UndoBackspace { get; set; } = true;
+
     // Горячая клавиша переключения автозамены (AutoSwitch).
     // Формат: "Ctrl+Shift+L", "Scroll", "Alt+K" и т.п.
     [JsonPropertyName("auto_switch_hotkey")]

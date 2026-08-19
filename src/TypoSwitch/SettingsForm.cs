@@ -3,6 +3,7 @@ namespace TypoSwitch;
 internal sealed class SettingsForm : Form
 {
     private readonly CheckBox _auto = new();
+    private readonly CheckBox _undoBackspace = new();
     private readonly CheckBox _sound = new();
     private readonly ComboBox _soundStyle = new();
     private readonly Button _soundPreview = new();
@@ -48,7 +49,7 @@ internal sealed class SettingsForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(460, 700);
+        ClientSize = new Size(460, 732);
         AutoScaleMode = AutoScaleMode.Font;
         KeyPreview = true;
         KeyDown += (_, e) =>
@@ -66,17 +67,18 @@ internal sealed class SettingsForm : Form
         };
 
         ConfigureCheck(_auto, "Автоматически исправлять раскладку", 48, config.AutoSwitch);
-        ConfigureCheck(_sound, "Звук при исправлении", 80, config.Sound);
+        ConfigureCheck(_undoBackspace, "Отменять автозамену клавишей Backspace", 80, config.UndoBackspace);
+        ConfigureCheck(_sound, "Звук при исправлении", 112, config.Sound);
 
         _soundStyle.DropDownStyle = ComboBoxStyle.DropDownList;
         _soundStyle.Items.AddRange(["Стандартный Windows", "Turbo Switcher"]);
         _soundStyle.SelectedIndex = config.SoundStyle == SwitchSound.Custom ? 1 : 0;
-        _soundStyle.Location = new Point(36, 108);
+        _soundStyle.Location = new Point(36, 140);
         _soundStyle.Size = new Size(250, 27);
         _soundStyle.Enabled = config.Sound;
 
         _soundPreview.Text = "Прослушать";
-        _soundPreview.Location = new Point(296, 106);
+        _soundPreview.Location = new Point(296, 138);
         _soundPreview.Size = new Size(110, 30);
         _soundPreview.Enabled = config.Sound;
         _soundPreview.Click += (_, _) => PreviewSound();
@@ -86,43 +88,43 @@ internal sealed class SettingsForm : Form
             _soundStyle.Enabled = _soundPreview.Enabled = _sound.Checked;
         };
 
-        ConfigureCheck(_startup, "Запускать вместе с Windows", 148, config.RunAtStartup);
-        ConfigureCheck(_checkUpdates, "Проверять обновления", 180, config.CheckUpdates);
+        ConfigureCheck(_startup, "Запускать вместе с Windows", 180, config.RunAtStartup);
+        ConfigureCheck(_checkUpdates, "Проверять обновления", 212, config.CheckUpdates);
 
         var minLabel = new Label
         {
             Text = "Минимальная длина слова:",
             AutoSize = true,
-            Location = new Point(16, 218),
+            Location = new Point(16, 250),
         };
-        _minLength.Location = new Point(250, 214);
+        _minLength.Location = new Point(250, 246);
         _minLength.Size = new Size(60, 27);
         _minLength.Minimum = 2;
         _minLength.Maximum = 8;
         _minLength.Value = Math.Clamp(config.MinWordLength, 2, 8);
 
-        var exLabel = new Label { Text = "Исключения (через запятую):", AutoSize = true, Location = new Point(16, 258) };
-        _exceptions.Location = new Point(16, 282);
+        var exLabel = new Label { Text = "Исключения (через запятую):", AutoSize = true, Location = new Point(16, 290) };
+        _exceptions.Location = new Point(16, 314);
         _exceptions.Size = new Size(428, 27);
         _exceptions.Text = string.Join(", ", config.Exceptions);
 
-        var ignLabel = new Label { Text = "Не работать в процессах (chrome.exe, …):", AutoSize = true, Location = new Point(16, 320) };
-        _ignored.Location = new Point(16, 344);
+        var ignLabel = new Label { Text = "Не работать в процессах (chrome.exe, …):", AutoSize = true, Location = new Point(16, 352) };
+        _ignored.Location = new Point(16, 376);
         _ignored.Size = new Size(428, 27);
         _ignored.Text = string.Join(", ", config.IgnoredProcesses);
 
         _hotkeyInfo.Text = "Горячая клавиша (вкл/выкл автоисправление):";
         _hotkeyInfo.AutoSize = false;
-        _hotkeyInfo.Location = new Point(16, 384);
+        _hotkeyInfo.Location = new Point(16, 416);
         _hotkeyInfo.Size = new Size(220, 27);
 
         _hotkeyText.ReadOnly = true;
-        _hotkeyText.Location = new Point(250, 380);
+        _hotkeyText.Location = new Point(250, 412);
         _hotkeyText.Size = new Size(190, 27);
         _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
 
         _hotkeyButton.Text = "Изменить";
-        _hotkeyButton.Location = new Point(296, 408);
+        _hotkeyButton.Location = new Point(296, 440);
         _hotkeyButton.Size = new Size(144, 30);
         _hotkeyButton.Click += (_, _) =>
         {
@@ -134,17 +136,17 @@ internal sealed class SettingsForm : Form
         };
 
         _lastWordInfo.AutoSize = false;
-        _lastWordInfo.Location = new Point(16, 440);
+        _lastWordInfo.Location = new Point(16, 472);
         _lastWordInfo.Size = new Size(220, 27);
         _lastWordInfo.Text = "Последнее слово:";
 
         _lastWordText.ReadOnly = true;
-        _lastWordText.Location = new Point(250, 436);
+        _lastWordText.Location = new Point(250, 468);
         _lastWordText.Size = new Size(190, 27);
         _lastWordText.Text = FormatHotkey(_lastWordDraft);
 
         _lastWordButton.Text = "Изменить";
-        _lastWordButton.Location = new Point(296, 464);
+        _lastWordButton.Location = new Point(296, 496);
         _lastWordButton.Size = new Size(144, 30);
         _lastWordButton.Click += (_, _) =>
         {
@@ -156,17 +158,17 @@ internal sealed class SettingsForm : Form
         };
 
         _selectionInfo.AutoSize = false;
-        _selectionInfo.Location = new Point(16, 500);
+        _selectionInfo.Location = new Point(16, 532);
         _selectionInfo.Size = new Size(220, 27);
         _selectionInfo.Text = "Выделенный текст:";
 
         _selectionText.ReadOnly = true;
-        _selectionText.Location = new Point(250, 496);
+        _selectionText.Location = new Point(250, 528);
         _selectionText.Size = new Size(190, 27);
         _selectionText.Text = FormatHotkey(_selectionDraft);
 
         _selectionButton.Text = "Изменить";
-        _selectionButton.Location = new Point(296, 524);
+        _selectionButton.Location = new Point(296, 556);
         _selectionButton.Size = new Size(144, 30);
         _selectionButton.Click += (_, _) =>
         {
@@ -178,16 +180,16 @@ internal sealed class SettingsForm : Form
         };
 
         _keysInfo.AutoSize = false;
-        _keysInfo.Location = new Point(16, 560);
+        _keysInfo.Location = new Point(16, 592);
         _keysInfo.Size = new Size(428, 60);
         _keysInfo.Text =
             $"{FormatHotkey(_hotkeyDraft)} — автоисправление (вкл/выкл)\n" +
             $"{FormatHotkey(_lastWordDraft)} — сменить последнее слово\n" +
             $"{FormatHotkey(_selectionDraft)} — сменить выделенный текст";
 
-        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 640), DialogResult = DialogResult.OK };
-        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 640), DialogResult = DialogResult.Cancel };
-        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 640) };
+        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 672), DialogResult = DialogResult.OK };
+        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 672), DialogResult = DialogResult.Cancel };
+        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 672) };
         folder.Click += (_, _) =>
         {
             Directory.CreateDirectory(AppConfig.DirectoryPath);
@@ -202,7 +204,7 @@ internal sealed class SettingsForm : Form
         AcceptButton = save;
         CancelButton = cancel;
 
-        Controls.AddRange([intro, _auto, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, _hotkeyInfo, _hotkeyText, _hotkeyButton, _lastWordInfo, _lastWordText, _lastWordButton, _selectionInfo, _selectionText, _selectionButton, _keysInfo, save, cancel, folder]);
+        Controls.AddRange([intro, _auto, _undoBackspace, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, _hotkeyInfo, _hotkeyText, _hotkeyButton, _lastWordInfo, _lastWordText, _lastWordButton, _selectionInfo, _selectionText, _selectionButton, _keysInfo, save, cancel, folder]);
     }
 
     private void CaptureHotkey(KeyEventArgs e)
@@ -297,6 +299,7 @@ internal sealed class SettingsForm : Form
     private void Apply()
     {
         _config.AutoSwitch = _auto.Checked;
+        _config.UndoBackspace = _undoBackspace.Checked;
         _config.AutoSwitchHotkey = _hotkeyDraft;
         _config.HotkeyLastWord = _lastWordDraft;
         _config.HotkeySelection = _selectionDraft;
