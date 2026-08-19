@@ -35,7 +35,8 @@ WizardStyle=modern
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
-AppMutex=Local\TurboSwitcher.SingleInstance.v1
+; Важно: не используем mutex приложения, иначе оно не сможет стартовать после установки.
+AppMutex=Local\TurboSwitcher.Setup.v1
 CloseApplications=yes
 VersionInfoVersion={#MyAppVersionInfo}
 VersionInfoProductVersion={#MyAppVersionInfo}
