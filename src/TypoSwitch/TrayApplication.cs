@@ -4,8 +4,10 @@ internal sealed class TrayApplication : ApplicationContext
 {
     private readonly NotifyIcon _tray;
     private readonly KeyboardEngine _engine;
+    private readonly Control _ui = new();
     private AppConfig _config;
     private Icon _icon;
+    private SettingsForm? _settings;
 
     public TrayApplication()
     {
@@ -24,6 +26,8 @@ internal sealed class TrayApplication : ApplicationContext
             ContextMenuStrip = BuildMenu(),
         };
         _tray.DoubleClick += (_, _) => ShowSettings();
+        _ = _ui.Handle;
+        SingleInstance.Listen(() => _ui.BeginInvoke(ShowSettings));
     }
 
     private ContextMenuStrip BuildMenu()
@@ -48,13 +52,30 @@ internal sealed class TrayApplication : ApplicationContext
 
     private void ShowSettings()
     {
+        if (_settings is { IsDisposed: false })
+        {
+            if (_settings.WindowState == FormWindowState.Minimized)
+                _settings.WindowState = FormWindowState.Normal;
+            _settings.Activate();
+            _settings.BringToFront();
+            return;
+        }
+
         using var form = new SettingsForm(_config);
-        if (form.ShowDialog() != DialogResult.OK) return;
-        _config = AppConfig.Load();
-        _engine.Reload(_config);
-        RefreshIcon();
-        if (_tray.ContextMenuStrip is { } menu && menu.Items[0] is ToolStripMenuItem item)
-            item.Checked = _config.AutoSwitch;
+        _settings = form;
+        try
+        {
+            if (form.ShowDialog() != DialogResult.OK) return;
+            _config = AppConfig.Load();
+            _engine.Reload(_config);
+            RefreshIcon();
+            if (_tray.ContextMenuStrip is { } menu && menu.Items[0] is ToolStripMenuItem item)
+                item.Checked = _config.AutoSwitch;
+        }
+        finally
+        {
+            _settings = null;
+        }
     }
 
     private void RefreshIcon()
@@ -72,6 +93,7 @@ internal sealed class TrayApplication : ApplicationContext
         _tray.Dispose();
         _icon.Dispose();
         _engine.Dispose();
+        _ui.Dispose();
         base.ExitThreadCore();
     }
 }

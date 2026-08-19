@@ -13,10 +13,10 @@
 publish.bat
 ```
 
-Готовые файлы:
+Готовые файлы (номер берётся из `<Version>` в проекте, сейчас `1.0.0`):
 
-- `publish\TurboSwitch.exe` — со встроенным runtime, копируется на другой ПК как есть
-- `publish\TurboSwitch-net8.exe` — маленький, на компьютере должен быть [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
+- `publish\TurboSwitcher 1.0.0.exe` — со встроенным runtime, копируется на другой ПК как есть
+- `publish\TurboSwitcher 1.0.0-net8.exe` — маленький, на компьютере должен быть [.NET 8 Desktop Runtime](https://dotnet.microsoft.com/download/dotnet/8.0)
 
 Запуск из исходников (нужен SDK):
 
