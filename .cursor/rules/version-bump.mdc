@@ -1,0 +1,16 @@
+---
+description: Bump patch version on every product change
+alwaysApply: true
+---
+
+# Version bump
+
+After every user-facing or behavior change in this repo, bump the patch version by **+0.0.1**.
+
+Version comes from git tags `v*.*.*` (`publish.bat` uses the latest such tag). Do not leave a completed change on the previous tag.
+
+Example: `v1.0.0` → `v1.0.1`.
+
+- If the change is already committed and the latest tag is behind HEAD, create the new tag on that commit.
+- Do not skip a bump because the change looks small.
+- Do not bump for docs-only, rule-only, or formatting-only edits unless the user asks.
