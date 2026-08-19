@@ -31,6 +31,9 @@
     <ProjectReference Include="..\TypoSwitch.Core\TypoSwitch.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <TrimmerRootAssembly Include="TypoSwitch.Core" />
+  </ItemGroup>
+  <ItemGroup>
     <EmbeddedResource Include="..\..\assets\switch.wav" Link="Assets\switch.wav" />
   </ItemGroup>
 </Project>

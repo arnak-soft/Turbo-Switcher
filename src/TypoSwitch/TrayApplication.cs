@@ -55,6 +55,9 @@ internal sealed class TrayApplication : ApplicationContext
             "Turbo Switcher",
             "Программа запущена. Иконка — в области уведомлений возле часов.",
             ToolTipIcon.Info);
+
+        // Чтобы пользователь точно заметил запуск (особенно если balloon-уведомление скрывается).
+        SwitchSound.PlayToggle(_config.AutoSwitch);
     }
 
     private ContextMenuStrip BuildMenu()

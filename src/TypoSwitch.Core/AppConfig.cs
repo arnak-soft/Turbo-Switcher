@@ -73,7 +73,18 @@ public sealed class AppConfig
         }
 
         var json = File.ReadAllText(FilePath);
-        return JsonSerializer.Deserialize(json, ConfigJsonContext.Default.AppConfig) ?? new AppConfig();
+
+        try
+        {
+            return JsonSerializer.Deserialize(json, ConfigJsonContext.Default.AppConfig) ?? new AppConfig();
+        }
+        catch (Exception)
+        {
+            // Битый или несовместимый config.json — пересоздаём, чтобы приложение могло запуститься.
+            var created = new AppConfig();
+            created.Save();
+            return created;
+        }
     }
 
     public void Save()
@@ -84,6 +95,6 @@ public sealed class AppConfig
     }
 }
 
-[JsonSourceGenerationOptions(WriteIndented = true)]
+[JsonSourceGenerationOptions(WriteIndented = true, AllowTrailingCommas = true)]
 [JsonSerializable(typeof(AppConfig))]
 internal partial class ConfigJsonContext : JsonSerializerContext;

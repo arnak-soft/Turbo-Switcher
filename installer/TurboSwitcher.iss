@@ -96,6 +96,9 @@ begin
   Content :=
     '{' + #13#10 +
     '  "auto_switch": true,' + #13#10 +
+    '  "auto_switch_hotkey": "Scroll",' + #13#10 +
+    '  "hotkey_last_word": "Pause",' + #13#10 +
+    '  "hotkey_selection": "Shift+Pause",' + #13#10 +
     '  "sound": false,' + #13#10 +
     '  "sound_style": "windows",' + #13#10 +
     '  "min_word_length": 3,' + #13#10 +
