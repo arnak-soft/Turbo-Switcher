@@ -44,20 +44,7 @@ internal sealed class TrayApplication : ApplicationContext
         _tray.DoubleClick += (_, _) => ShowSettings();
         _ = _ui.Handle;
         SingleInstance.Listen(() => _ui.BeginInvoke(ShowSettings));
-        _ui.BeginInvoke(ShowStartupNotification);
         StartUpdateChecker();
-    }
-
-    private void ShowStartupNotification()
-    {
-        _tray.ShowBalloonTip(
-            4000,
-            "Turbo Switcher",
-            "Программа запущена. Иконка — в области уведомлений возле часов.",
-            ToolTipIcon.Info);
-
-        // Чтобы пользователь точно заметил запуск (особенно если balloon-уведомление скрывается).
-        SwitchSound.PlayToggle(_config.AutoSwitch);
     }
 
     private ContextMenuStrip BuildMenu()
@@ -65,6 +52,8 @@ internal sealed class TrayApplication : ApplicationContext
         var menu = new ContextMenuStrip();
         menu.Items.Add(_updateItem);
         menu.Items.Add(_updateSeparator);
+        menu.Items.Add("Проверить обновления", null, (_, _) => _ = CheckUpdatesManuallyAsync());
+        menu.Items.Add(new ToolStripSeparator());
         menu.Items.Add(_autoMenuItem);
         menu.Items.Add("Сменить последнее слово", null, (_, _) => _engine.ConvertLastWord());
         menu.Items.Add(new ToolStripSeparator());
@@ -128,6 +117,62 @@ internal sealed class TrayApplication : ApplicationContext
         });
     }
 
+    private async Task CheckUpdatesManuallyAsync(IWin32Window? owner = null)
+    {
+        UpdateFetchResult result;
+        if (_updates is not null)
+            result = await _updates.FetchLatestUpdateAsync().ConfigureAwait(true);
+        else
+        {
+            using var checker = new UpdateChecker();
+            result = await checker.FetchLatestUpdateAsync().ConfigureAwait(true);
+        }
+
+        switch (result.Status)
+        {
+            case UpdateFetchStatus.Available:
+            {
+                var update = result.Update!.Value;
+                SetUpdateAvailable(update);
+                MessageBox.Show(
+                    owner,
+                    $"Доступна версия {update.Version}.\n\nСкачать можно через пункт меню «Скачать обновление».",
+                    "Turbo Switcher",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                break;
+            }
+
+            case UpdateFetchStatus.UpToDate:
+                SetUpdateAvailable(null);
+                MessageBox.Show(
+                    owner,
+                    "У вас установлена последняя версия.",
+                    "Turbo Switcher",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                break;
+
+            case UpdateFetchStatus.Busy:
+                MessageBox.Show(
+                    owner,
+                    "Проверка обновлений уже выполняется.",
+                    "Turbo Switcher",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                break;
+
+            default:
+                MessageBox.Show(
+                    owner,
+                    "Не удалось проверить обновления. Проверьте подключение к интернету.",
+                    "Turbo Switcher",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                break;
+        }
+    }
+
     private void ShowSettings()
     {
         if (_settings is { IsDisposed: false })
@@ -139,7 +184,7 @@ internal sealed class TrayApplication : ApplicationContext
             return;
         }
 
-        using var form = new SettingsForm(_config);
+        using var form = new SettingsForm(_config, owner => CheckUpdatesManuallyAsync(owner));
         _settings = form;
         try
         {

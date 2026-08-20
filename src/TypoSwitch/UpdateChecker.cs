@@ -31,16 +31,26 @@ internal sealed class UpdateChecker : IDisposable
 
     public async Task CheckAsync()
     {
+        var result = await FetchLatestUpdateAsync().ConfigureAwait(false);
+        if (result.Status == UpdateFetchStatus.Available)
+            UpdateAvailable?.Invoke(result.Update);
+        else if (result.Status == UpdateFetchStatus.UpToDate)
+            UpdateAvailable?.Invoke(null);
+    }
+
+    public async Task<UpdateFetchResult> FetchLatestUpdateAsync()
+    {
         lock (_gate)
         {
-            if (_busy) return;
+            if (_busy) return new UpdateFetchResult(UpdateFetchStatus.Busy, null);
             _busy = true;
         }
 
         try
         {
             using var response = await _http.GetAsync(LatestReleaseUri).ConfigureAwait(false);
-            if (!response.IsSuccessStatusCode) return;
+            if (!response.IsSuccessStatusCode)
+                return new UpdateFetchResult(UpdateFetchStatus.Failed, null);
 
             await using var stream = await response.Content.ReadAsStreamAsync().ConfigureAwait(false);
             using var doc = await JsonDocument.ParseAsync(stream).ConfigureAwait(false);
@@ -49,16 +59,16 @@ internal sealed class UpdateChecker : IDisposable
             var tag = root.GetProperty("tag_name").GetString();
             var url = root.GetProperty("html_url").GetString();
             if (!VersionParsing.TryParseTag(tag, out var latest) || string.IsNullOrWhiteSpace(url))
-                return;
+                return new UpdateFetchResult(UpdateFetchStatus.Failed, null);
 
             if (VersionParsing.IsNewer(latest, AppVersion.Current))
-                UpdateAvailable?.Invoke(new UpdateInfo(latest.ToString(3), url));
-            else
-                UpdateAvailable?.Invoke(null);
+                return new UpdateFetchResult(UpdateFetchStatus.Available, new UpdateInfo(latest.ToString(3), url));
+
+            return new UpdateFetchResult(UpdateFetchStatus.UpToDate, null);
         }
         catch
         {
-            // сеть недоступна — просто пропускаем
+            return new UpdateFetchResult(UpdateFetchStatus.Failed, null);
         }
         finally
         {

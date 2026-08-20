@@ -9,6 +9,7 @@ internal sealed class SettingsForm : Form
     private readonly Button _soundPreview = new();
     private readonly CheckBox _startup = new();
     private readonly CheckBox _checkUpdates = new();
+    private readonly Button _checkUpdatesButton = new();
     private readonly NumericUpDown _minLength = new();
     private readonly TextBox _exceptions = new();
     private readonly TextBox _ignored = new();
@@ -28,6 +29,7 @@ internal sealed class SettingsForm : Form
     private string _lastWordDraft;
     private string _selectionDraft;
     private readonly AppConfig _config;
+    private readonly Func<IWin32Window, Task>? _checkUpdatesManual;
 
     private enum HotkeyTarget
     {
@@ -36,9 +38,10 @@ internal sealed class SettingsForm : Form
         Selection
     }
 
-    public SettingsForm(AppConfig config)
+    public SettingsForm(AppConfig config, Func<IWin32Window, Task>? checkUpdatesManual = null)
     {
         _config = config;
+        _checkUpdatesManual = checkUpdatesManual;
         _hotkeyDraft = config.AutoSwitchHotkey;
         _lastWordDraft = config.HotkeyLastWord;
         _selectionDraft = config.HotkeySelection;
@@ -90,6 +93,26 @@ internal sealed class SettingsForm : Form
 
         ConfigureCheck(_startup, "Запускать вместе с Windows", 180, config.RunAtStartup);
         ConfigureCheck(_checkUpdates, "Проверять обновления", 212, config.CheckUpdates);
+
+        _checkUpdatesButton.Text = "Проверить";
+        _checkUpdatesButton.Location = new Point(296, 208);
+        _checkUpdatesButton.Size = new Size(110, 30);
+        _checkUpdatesButton.Enabled = _checkUpdatesManual is not null;
+        _checkUpdatesButton.Click += async (_, _) =>
+        {
+            if (_checkUpdatesManual is null) return;
+            _checkUpdatesButton.Enabled = false;
+            _checkUpdatesButton.Text = "Проверяем…";
+            try
+            {
+                await _checkUpdatesManual(this);
+            }
+            finally
+            {
+                _checkUpdatesButton.Enabled = true;
+                _checkUpdatesButton.Text = "Проверить";
+            }
+        };
 
         var minLabel = new Label
         {
@@ -204,7 +227,7 @@ internal sealed class SettingsForm : Form
         AcceptButton = save;
         CancelButton = cancel;
 
-        Controls.AddRange([intro, _auto, _undoBackspace, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, _hotkeyInfo, _hotkeyText, _hotkeyButton, _lastWordInfo, _lastWordText, _lastWordButton, _selectionInfo, _selectionText, _selectionButton, _keysInfo, save, cancel, folder]);
+        Controls.AddRange([intro, _auto, _undoBackspace, _sound, _soundStyle, _soundPreview, _startup, _checkUpdates, _checkUpdatesButton, minLabel, _minLength, exLabel, _exceptions, ignLabel, _ignored, _hotkeyInfo, _hotkeyText, _hotkeyButton, _lastWordInfo, _lastWordText, _lastWordButton, _selectionInfo, _selectionText, _selectionButton, _keysInfo, save, cancel, folder]);
     }
 
     private void CaptureHotkey(KeyEventArgs e)
