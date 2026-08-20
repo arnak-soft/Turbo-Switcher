@@ -52,7 +52,7 @@ internal sealed class SettingsForm : Form
         MaximizeBox = false;
         MinimizeBox = false;
         StartPosition = FormStartPosition.CenterScreen;
-        ClientSize = new Size(460, 732);
+        ClientSize = new Size(460, 700);
         AutoScaleMode = AutoScaleMode.Font;
         KeyPreview = true;
         KeyDown += (_, e) =>
@@ -136,83 +136,83 @@ internal sealed class SettingsForm : Form
         _ignored.Size = new Size(428, 27);
         _ignored.Text = string.Join(", ", config.IgnoredProcesses);
 
-        _hotkeyInfo.Text = "Горячая клавиша (вкл/выкл автоисправление):";
+        _hotkeyInfo.Text = "Горячая клавиша (вкл/выкл):";
         _hotkeyInfo.AutoSize = false;
         _hotkeyInfo.Location = new Point(16, 416);
-        _hotkeyInfo.Size = new Size(220, 27);
+        _hotkeyInfo.Size = new Size(200, 30);
+        _hotkeyInfo.TextAlign = ContentAlignment.MiddleLeft;
 
         _hotkeyText.ReadOnly = true;
-        _hotkeyText.Location = new Point(250, 412);
-        _hotkeyText.Size = new Size(190, 27);
+        _hotkeyText.Location = new Point(220, 416);
+        _hotkeyText.Size = new Size(120, 27);
         _hotkeyText.Text = FormatHotkey(_hotkeyDraft);
 
         _hotkeyButton.Text = "Изменить";
-        _hotkeyButton.Location = new Point(296, 440);
-        _hotkeyButton.Size = new Size(144, 30);
+        _hotkeyButton.Location = new Point(348, 414);
+        _hotkeyButton.Size = new Size(96, 30);
         _hotkeyButton.Click += (_, _) =>
         {
             _hotkeyTarget = HotkeyTarget.AutoSwitch;
             _capturingHotkey = true;
-            _hotkeyButton.Text = "Нажмите комбинацию…";
-            _hotkeyText.Text = "";
+            _hotkeyText.Text = "Нажмите…";
             _hotkeyText.Focus();
         };
 
         _lastWordInfo.AutoSize = false;
-        _lastWordInfo.Location = new Point(16, 472);
-        _lastWordInfo.Size = new Size(220, 27);
+        _lastWordInfo.Location = new Point(16, 460);
+        _lastWordInfo.Size = new Size(200, 30);
         _lastWordInfo.Text = "Последнее слово:";
+        _lastWordInfo.TextAlign = ContentAlignment.MiddleLeft;
 
         _lastWordText.ReadOnly = true;
-        _lastWordText.Location = new Point(250, 468);
-        _lastWordText.Size = new Size(190, 27);
+        _lastWordText.Location = new Point(220, 460);
+        _lastWordText.Size = new Size(120, 27);
         _lastWordText.Text = FormatHotkey(_lastWordDraft);
 
         _lastWordButton.Text = "Изменить";
-        _lastWordButton.Location = new Point(296, 496);
-        _lastWordButton.Size = new Size(144, 30);
+        _lastWordButton.Location = new Point(348, 458);
+        _lastWordButton.Size = new Size(96, 30);
         _lastWordButton.Click += (_, _) =>
         {
             _hotkeyTarget = HotkeyTarget.LastWord;
             _capturingHotkey = true;
-            _lastWordButton.Text = "Нажмите комбинацию…";
-            _lastWordText.Text = "";
+            _lastWordText.Text = "Нажмите…";
             _lastWordText.Focus();
         };
 
         _selectionInfo.AutoSize = false;
-        _selectionInfo.Location = new Point(16, 532);
-        _selectionInfo.Size = new Size(220, 27);
+        _selectionInfo.Location = new Point(16, 504);
+        _selectionInfo.Size = new Size(200, 30);
         _selectionInfo.Text = "Выделенный текст:";
+        _selectionInfo.TextAlign = ContentAlignment.MiddleLeft;
 
         _selectionText.ReadOnly = true;
-        _selectionText.Location = new Point(250, 528);
-        _selectionText.Size = new Size(190, 27);
+        _selectionText.Location = new Point(220, 504);
+        _selectionText.Size = new Size(120, 27);
         _selectionText.Text = FormatHotkey(_selectionDraft);
 
         _selectionButton.Text = "Изменить";
-        _selectionButton.Location = new Point(296, 556);
-        _selectionButton.Size = new Size(144, 30);
+        _selectionButton.Location = new Point(348, 502);
+        _selectionButton.Size = new Size(96, 30);
         _selectionButton.Click += (_, _) =>
         {
             _hotkeyTarget = HotkeyTarget.Selection;
             _capturingHotkey = true;
-            _selectionButton.Text = "Нажмите комбинацию…";
-            _selectionText.Text = "";
+            _selectionText.Text = "Нажмите…";
             _selectionText.Focus();
         };
 
         _keysInfo.AutoSize = false;
-        _keysInfo.Location = new Point(16, 592);
+        _keysInfo.Location = new Point(16, 548);
         _keysInfo.Size = new Size(428, 60);
         _keysInfo.Text =
             $"{FormatHotkey(_hotkeyDraft)} — автоисправление (вкл/выкл)\n" +
             $"{FormatHotkey(_lastWordDraft)} — сменить последнее слово\n" +
             $"{FormatHotkey(_selectionDraft)} — сменить выделенный текст";
 
-        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 672), DialogResult = DialogResult.OK };
-        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 672), DialogResult = DialogResult.Cancel };
-        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 672) };
+        var save = new Button { Text = "Сохранить", Size = new Size(110, 32), Location = new Point(334, 640), DialogResult = DialogResult.OK };
+        var cancel = new Button { Text = "Отмена", Size = new Size(110, 32), Location = new Point(214, 640), DialogResult = DialogResult.Cancel };
+        var folder = new Button { Text = "Папка настроек", Size = new Size(140, 32), Location = new Point(16, 640) };
         folder.Click += (_, _) =>
         {
             Directory.CreateDirectory(AppConfig.DirectoryPath);
