@@ -54,6 +54,35 @@ public class DetectorTests
     }
 
     [Fact]
+    public void ExtraExceptionIsNotSwitched()
+    {
+        var detector = new Detector(extraExceptions: ["ghbdtn"]);
+        Assert.False(detector.ShouldSwitch("ghbdtn"));
+    }
+
+    [Fact]
+    public void ExtraKnownWordIsNotSwitched()
+    {
+        var detector = new Detector(extraKnownWords: ["ghbdtn"]);
+        var result = detector.Analyze("ghbdtn");
+        Assert.False(result.ShouldSwitch, result.ToString());
+        Assert.Equal("known_word", result.Reason);
+    }
+
+    [Fact]
+    public void ExtraKnownWordHelpsSwitchFromOtherLayout()
+    {
+        const string word = "blorpt";
+        var inverted = Layouts.Invert(word);
+        Assert.False(new Detector().ShouldSwitch(inverted));
+
+        var detector = new Detector(extraKnownWords: [word]);
+        var result = detector.Analyze(inverted);
+        Assert.True(result.ShouldSwitch, result.ToString());
+        Assert.Equal(word, result.Converted, ignoreCase: true);
+    }
+
+    [Fact]
     public void CommaIsPartOfRussianWord()
     {
         var result = _detector.Analyze("cgfcb,j");

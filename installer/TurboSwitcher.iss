@@ -102,6 +102,8 @@ begin
     '  "sound": false,' + #13#10 +
     '  "sound_style": "windows",' + #13#10 +
     '  "min_word_length": 3,' + #13#10 +
+    '  "learn_words": true,' + #13#10 +
+    '  "undo_learn_after": 4,' + #13#10 +
     '  "exceptions": [],' + #13#10 +
     '  "ignored_processes": [],' + #13#10 +
     '  "run_at_startup": ' + BoolToJson(RunAtStartup) + ',' + #13#10 +

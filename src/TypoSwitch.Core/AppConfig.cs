@@ -33,6 +33,14 @@ public sealed class AppConfig
     [JsonPropertyName("min_word_length")]
     public int MinWordLength { get; set; } = 3;
 
+    // Запоминать частые слова и отмены автозамены.
+    [JsonPropertyName("learn_words")]
+    public bool LearnWords { get; set; } = true;
+
+    // После скольких отмен одного слова запомнить его как исключение (3–5).
+    [JsonPropertyName("undo_learn_after")]
+    public int UndoLearnAfter { get; set; } = WordMemory.DefaultUndoLearnAfter;
+
     [JsonPropertyName("exceptions")]
     public List<string> Exceptions { get; set; } = [];
 

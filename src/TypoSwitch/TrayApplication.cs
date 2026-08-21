@@ -4,6 +4,7 @@ internal sealed class TrayApplication : ApplicationContext
 {
     private readonly NotifyIcon _tray;
     private readonly KeyboardEngine _engine;
+    private readonly WordMemory _memory;
     private readonly Control _ui = new();
     private readonly ToolStripMenuItem _updateItem;
     private readonly ToolStripSeparator _updateSeparator;
@@ -18,7 +19,8 @@ internal sealed class TrayApplication : ApplicationContext
     {
         _config = AppConfig.Load();
         StartupShortcut.Apply(_config.RunAtStartup);
-        _engine = new KeyboardEngine(_config);
+        _memory = new WordMemory();
+        _engine = new KeyboardEngine(_config, _memory);
         _engine.Enabled = _config.AutoSwitch;
         _engine.AutoSwitchToggleRequested += () => _ui.BeginInvoke(ToggleAutoSwitch);
         _engine.Start();
@@ -184,7 +186,7 @@ internal sealed class TrayApplication : ApplicationContext
             return;
         }
 
-        using var form = new SettingsForm(_config, owner => CheckUpdatesManuallyAsync(owner));
+        using var form = new SettingsForm(_config, owner => CheckUpdatesManuallyAsync(owner), _memory, () => _engine.Reload(_config));
         _settings = form;
         try
         {

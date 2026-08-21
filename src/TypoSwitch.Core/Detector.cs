@@ -45,20 +45,22 @@ public sealed class Detector
     private readonly HashSet<string> _ru = WordLists.Russian;
     private readonly HashSet<string> _en = WordLists.English;
     private readonly HashSet<string> _exceptions;
+    private readonly HashSet<string> _known;
     private readonly int _minLength;
     private readonly double _margin;
 
-    public Detector(int minLength = 3, double margin = 2.5, IEnumerable<string>? extraExceptions = null)
+    public Detector(
+        int minLength = 3,
+        double margin = 2.5,
+        IEnumerable<string>? extraExceptions = null,
+        IEnumerable<string>? extraKnownWords = null)
     {
         _minLength = minLength;
         _margin = margin;
         _exceptions = new HashSet<string>(WordLists.Exceptions, StringComparer.OrdinalIgnoreCase);
-        if (extraExceptions is null) return;
-        foreach (var item in extraExceptions)
-        {
-            if (!string.IsNullOrWhiteSpace(item))
-                _exceptions.Add(item.Trim().ToLowerInvariant());
-        }
+        _known = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        AddAll(_exceptions, extraExceptions);
+        AddAll(_known, extraKnownWords);
     }
 
     public bool ShouldSwitch(string word) => Analyze(word).ShouldSwitch;
@@ -95,7 +97,7 @@ public sealed class Detector
         var convKey = converted.ToLowerInvariant();
         var convLetters = LettersOnly(convKey);
 
-        if (_en.Contains(key) || _ru.Contains(key))
+        if (IsKnown(key) || IsKnown(letters.ToLowerInvariant()))
             return Keep("known_word", converted, originalScore, convertedScore);
 
         if (!IsKnownInTarget(convKey, letters) && !IsKnownInTarget(convLetters, letters))
@@ -127,6 +129,8 @@ public sealed class Detector
         if (_ru.Contains(low) || _ru.Contains(letters))
             points += 18 + Math.Min(letters.Length, 8);
         if (_en.Contains(low) || _en.Contains(letters))
+            points += 18 + Math.Min(letters.Length, 8);
+        if (_known.Contains(low) || _known.Contains(letters))
             points += 18 + Math.Min(letters.Length, 8);
 
         if (Layouts.IsCyrillic(letters))
@@ -181,9 +185,23 @@ public sealed class Detector
         return 0;
     }
 
+    private bool IsKnown(string word) =>
+        word.Length > 0 && (_en.Contains(word) || _ru.Contains(word) || _known.Contains(word));
+
+    private static void AddAll(HashSet<string> target, IEnumerable<string>? items)
+    {
+        if (items is null) return;
+        foreach (var item in items)
+        {
+            if (!string.IsNullOrWhiteSpace(item))
+                target.Add(item.Trim().ToLowerInvariant());
+        }
+    }
+
     private bool IsKnownInTarget(string word, string originalLetters)
     {
         if (word.Length == 0) return false;
+        if (_known.Contains(word)) return true;
         if (Layouts.IsLatin(originalLetters))
             return _ru.Contains(word);
         if (Layouts.IsCyrillic(originalLetters))

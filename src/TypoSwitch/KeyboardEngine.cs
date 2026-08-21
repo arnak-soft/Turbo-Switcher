@@ -14,6 +14,7 @@ internal sealed class KeyboardEngine : IDisposable
     private IntPtr _hook;
     private Thread? _worker;
     private AppConfig _config;
+    private readonly WordMemory _memory;
     private Detector _detector;
     private HashSet<string> _ignored;
     private string _buffer = "";
@@ -25,10 +26,11 @@ internal sealed class KeyboardEngine : IDisposable
     private HotkeyDef? _hotkeyLastWord;
     private HotkeyDef? _hotkeySelection;
 
-    public KeyboardEngine(AppConfig config)
+    public KeyboardEngine(AppConfig config, WordMemory memory)
     {
         _config = config;
-        _detector = new Detector(config.MinWordLength, extraExceptions: config.Exceptions);
+        _memory = memory;
+        _detector = CreateDetector(config);
         _ignored = ToSet(config.IgnoredProcesses);
         _autoSwitchHotkey = HotkeyDef.Parse(config.AutoSwitchHotkey);
         _hotkeyLastWord = HotkeyDef.Parse(config.HotkeyLastWord);
@@ -48,7 +50,7 @@ internal sealed class KeyboardEngine : IDisposable
         lock (_sync)
         {
             _config = config;
-            _detector = new Detector(config.MinWordLength, extraExceptions: config.Exceptions);
+            _detector = CreateDetector(config);
             _ignored = ToSet(config.IgnoredProcesses);
             _enabled = config.AutoSwitch;
             _autoSwitchHotkey = HotkeyDef.Parse(config.AutoSwitchHotkey);
@@ -75,7 +77,7 @@ internal sealed class KeyboardEngine : IDisposable
     {
         Snapshot snapshot;
         lock (_sync)
-            snapshot = TakeSnapshot();
+            snapshot = TakeSnapshot(rememberUndo: true);
         Enqueue(() => Hotkey(selection: false, snapshot));
     }
 
@@ -132,7 +134,7 @@ internal sealed class KeyboardEngine : IDisposable
 
             if (IsHotkey(_hotkeyLastWord, kb))
             {
-                var snapshot = TakeSnapshot();
+                var snapshot = TakeSnapshot(rememberUndo: true);
                 Enqueue(() => Hotkey(selection: false, snapshot));
                 return true;
             }
@@ -219,6 +221,7 @@ internal sealed class KeyboardEngine : IDisposable
         {
             _committed = new Committed(word, delimiter);
             ClearPendingUndo();
+            RememberKept(word);
             return false;
         }
 
@@ -227,6 +230,7 @@ internal sealed class KeyboardEngine : IDisposable
         {
             _committed = new Committed(word, delimiter);
             ClearPendingUndo();
+            RememberKept(word);
             return false;
         }
 
@@ -240,8 +244,10 @@ internal sealed class KeyboardEngine : IDisposable
         return true;
     }
 
-    private Snapshot TakeSnapshot()
+    private Snapshot TakeSnapshot(bool rememberUndo = false)
     {
+        if (rememberUndo && _pendingUndo is { } corr)
+            RememberUndo(corr.Original);
         ClearPendingUndo();
         if (_buffer.Length > 0)
         {
@@ -275,6 +281,7 @@ internal sealed class KeyboardEngine : IDisposable
 
         ClearPendingUndo();
         _committed = new Committed(corr.Original, corr.Delimiter);
+        RememberUndo(corr.Original);
         var sound = _config.Sound;
         var soundStyle = _config.SoundStyle;
         Enqueue(() => UndoReplace(corr, sound, soundStyle));
@@ -333,6 +340,39 @@ internal sealed class KeyboardEngine : IDisposable
         Thread.Sleep(20);
         Native.SendCtrl(Native.VkV);
         Native.SwitchToScript(converted);
+    }
+
+    private Detector CreateDetector(AppConfig config)
+    {
+        IEnumerable<string> exceptions = config.Exceptions;
+        IEnumerable<string>? known = null;
+        if (config.LearnWords)
+        {
+            exceptions = config.Exceptions.Concat(_memory.LearnedExceptions);
+            known = _memory.LearnedWords;
+        }
+
+        return new Detector(config.MinWordLength, extraExceptions: exceptions, extraKnownWords: known);
+    }
+
+    private void RememberKept(string word)
+    {
+        if (!_config.LearnWords) return;
+        Remember(_memory.RecordKeptWord(word, _config.MinWordLength));
+    }
+
+    private void RememberUndo(string original)
+    {
+        if (!_config.LearnWords) return;
+        Remember(_memory.RecordUndo(original, _config.UndoLearnAfter));
+    }
+
+    private void Remember(MemoryUpdate update)
+    {
+        if (update == MemoryUpdate.None) return;
+        if (update == MemoryUpdate.Learned)
+            _detector = CreateDetector(_config);
+        Enqueue(() => _memory.Save());
     }
 
     private static HashSet<string> ToSet(IEnumerable<string> items) =>
